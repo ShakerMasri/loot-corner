@@ -1,29 +1,94 @@
-# Create T3 App
+# Loot Corner
 
-This is a [T3 Stack](https://create.t3.gg/) project bootstrapped with `create-t3-app`.
+Loot Corner is a full-stack e-commerce web application for selling collectible products such as figures, posters, and accessories.
 
-## What's next? How do I make an app with this?
+## Tech Stack
 
-We try to keep this project as simple as possible, so you can start with just the scaffolding we set up for you, and add additional things later when they become necessary.
+- Next.js
+- TypeScript
+- PostgreSQL
+- Prisma
+- Auth.js
+- Zod
+- Docker
 
-If you are not familiar with the different technologies used in this project, please refer to the respective docs. If you still are in the wind, please join our [Discord](https://t3.gg/discord) and ask for help.
+## Backend Foundation
 
-- [Next.js](https://nextjs.org)
-- [NextAuth.js](https://next-auth.js.org)
-- [Prisma](https://prisma.io)
-- [Drizzle](https://orm.drizzle.team)
-- [Tailwind CSS](https://tailwindcss.com)
-- [tRPC](https://trpc.io)
+The backend foundation is implemented using Next.js, Prisma, PostgreSQL, Auth.js, and Zod.
 
-## Learn More
+### Completed Features
 
-To learn more about the [T3 Stack](https://create.t3.gg/), take a look at the following resources:
+- PostgreSQL database setup with Docker
+- Prisma schema with core models:
+  - User
+  - Category
+  - Product
+  - Order
+  - OrderItem
+  - Message
+- Prisma migrations applied successfully
+- Prisma Client generated and used for database access
+- Auth.js credentials authentication
+- Password hashing with bcrypt
+- JWT-based session strategy
+- Protected account and admin routes using middleware
+- Admin-only page protection
+- Admin API role checks
+- Non-admin users receive `404` for admin-only pages/routes
+- Zod validation for register, login, category, and product input
+- Field-level validation errors returned from API routes
+- Basic security checks completed:
+  - No plaintext passwords stored
+  - `passwordHash` is not returned from API routes
+  - Secrets are stored in `.env`
+  - Prisma is used instead of raw SQL
+  - Auth sessions use HTTP-only cookies
 
-- [Documentation](https://create.t3.gg/)
-- [Learn the T3 Stack](https://create.t3.gg/en/faq#what-learning-resources-are-currently-available) — Check out these awesome tutorials
+## Environment Variables
 
-You can check out the [create-t3-app GitHub repository](https://github.com/t3-oss/create-t3-app) — your feedback and contributions are welcome!
+Create a `.env` file based on `.env.example`:
 
-## How do I deploy this?
+```env
+DATABASE_URL="postgresql://USER:PASSWORD@localhost:5436/DB_NAME"
+AUTH_SECRET="replace-with-your-auth-secret"
+```
 
-Follow our deployment guides for [Vercel](https://create.t3.gg/en/deployment/vercel), [Netlify](https://create.t3.gg/en/deployment/netlify) and [Docker](https://create.t3.gg/en/deployment/docker) for more information.
+Generate an Auth.js secret:
+
+npx auth secret
+Development
+
+Install dependencies:
+
+npm install
+
+Run the development server:
+
+npm run dev
+
+Run Prisma commands:
+
+npx prisma migrate dev
+npx prisma generate
+npx prisma studio
+
+Run checks:
+
+npm run lint
+npm run build
+Roles
+
+The system currently supports two roles:
+
+CUSTOMER
+ADMIN
+
+Admin-only pages and API routes verify the user session role before allowing access.
+
+After editing README:
+
+```bash
+git add README.md
+git commit -m "Update README with backend foundation details"
+git push origin main
+```
