@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-
+import { AddToCartControls } from "~/components/cart/AddToCartControls";
 type Product = {
   id: string;
   name: string;
@@ -156,18 +156,11 @@ export function ProductDetailClient({ slug }: ProductDetailClientProps) {
             In stock: {product.stock}
           </span>
         )}
-
-        <button
-          type="button"
-          disabled={isOutOfStock}
-          className="block rounded bg-black px-6 py-3 text-white disabled:cursor-not-allowed disabled:opacity-50"
-        >
-          {isOutOfStock ? "Out of stock" : "Request order"}
-        </button>
+        <AddToCartControls productId={product.id} stock={product.stock} />
 
         <p className="text-xs text-gray-500">
-          The real order request will be added in the next checklist. Stock must
-          be checked again on the server before creating an order.
+          Adding to cart does not reserve stock. Stock is checked again during
+          checkout.
         </p>
       </div>
     </div>
