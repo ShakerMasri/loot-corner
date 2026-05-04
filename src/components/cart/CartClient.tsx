@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 type CartProduct = {
   id: string;
@@ -29,6 +29,31 @@ type CartResponse = {
   message?: string;
 };
 
+type OrderItem = {
+  id: string;
+  quantity: number;
+  priceAtPurchase: string;
+  subtotalAmount: string;
+  productNameAtPurchase: string;
+  productSlugAtPurchase: string;
+  productImagesAtPurchase: string[];
+};
+
+type Order = {
+  id: string;
+  status: string;
+  paymentMethod: string;
+  paymentStatus: string;
+  totalAmount: string;
+  createdAt: string;
+  items: OrderItem[];
+};
+
+type CheckoutResponse = {
+  message?: string;
+  order?: Order;
+};
+
 function formatPrice(price: number) {
   return `$${price.toFixed(2)}`;
 }
@@ -37,12 +62,54 @@ export function CartClient() {
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [message, setMessage] = useState("");
+  const checkoutKeyRef = useRef<string | null>(null);
+  const [checkoutStatus, setCheckoutStatus] = useState<
+    "idle" | "loading" | "success" | "error"
+  >("idle");
+  const [placedOrder, setPlacedOrder] = useState<Order | null>(null);
 
   const total = useMemo(() => {
     return cartItems.reduce((sum, item) => {
       return sum + Number(item.product.price) * item.quantity;
     }, 0);
   }, [cartItems]);
+  async function placeOrder() {
+    if (checkoutStatus === "loading" || checkoutStatus === "success") {
+      return;
+    }
+
+    setCheckoutStatus("loading");
+    setMessage("");
+
+    checkoutKeyRef.current ??= crypto.randomUUID();
+
+    try {
+      const response = await fetch("/api/orders", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          idempotencyKey: checkoutKeyRef.current,
+        }),
+      });
+
+      const data = (await response.json()) as CheckoutResponse;
+
+      if (!response.ok || !data.order) {
+        setCheckoutStatus("error");
+        setMessage(data.message ?? "Failed to place order.");
+        return;
+      }
+
+      setCheckoutStatus("success");
+      setPlacedOrder(data.order);
+      setCartItems([]);
+    } catch {
+      setCheckoutStatus("error");
+      setMessage("Failed to connect to the server.");
+    }
+  }
 
   async function loadCart() {
     setIsLoading(true);
@@ -113,6 +180,28 @@ export function CartClient() {
     return (
       <div className="rounded border border-gray-200 p-6">
         <p className="text-gray-700">{message}</p>
+      </div>
+    );
+  }
+
+  if (placedOrder) {
+    return (
+      <div className="rounded border border-green-200 bg-green-50 p-6 text-green-800">
+        <h2 className="text-lg font-semibold">Order placed successfully.</h2>
+
+        <p className="mt-2">
+          Order ID: <span className="font-mono">{placedOrder.id}</span>
+        </p>
+
+        <p className="mt-2">
+          Total: ${Number(placedOrder.totalAmount).toFixed(2)}
+        </p>
+
+        <p className="mt-2">Payment method: Cash on delivery</p>
+
+        <Link href="/orders" className="mt-4 inline-block underline">
+          View my orders
+        </Link>
       </div>
     );
   }
@@ -235,14 +324,22 @@ export function CartClient() {
 
         <button
           type="button"
-          disabled
-          className="mt-4 w-full rounded bg-black px-4 py-3 text-white opacity-50"
+          onClick={() => void placeOrder()}
+          disabled={
+            checkoutStatus === "loading" || checkoutStatus === "success"
+          }
+          className="mt-4 w-full rounded bg-black px-4 py-3 text-white disabled:cursor-not-allowed disabled:opacity-50"
         >
-          Checkout coming next
+          {checkoutStatus === "loading"
+            ? "Placing order..."
+            : checkoutStatus === "success"
+              ? "Order placed"
+              : "Place order"}
         </button>
 
         <p className="mt-3 text-xs text-gray-500">
-          Checkout will create the real order and decrease stock.
+          Payment method: cash on delivery. Stock is checked and reduced only
+          when this order is placed.
         </p>
       </aside>
     </div>

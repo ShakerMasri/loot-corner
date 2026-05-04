@@ -29,6 +29,15 @@ enum MessageSender {
   ADMIN
 }
 
+enum PaymentMethod {
+  CASH_ON_DELIVERY
+}
+
+enum PaymentStatus {
+  UNPAID
+  PAID
+}
+
 // ─── User ─────────────────────────────────────────────────────────────────────
 
 model User {
@@ -90,7 +99,13 @@ model Product {
 model Order {
   id          String      @id @default(cuid())
   status      OrderStatus @default(PENDING)
-  totalAmount Decimal     @db.Decimal(10, 2) // sum of all OrderItem subtotals
+  totalAmount Decimal     @db.Decimal(10, 2)
+
+  paymentMethod PaymentMethod @default(CASH_ON_DELIVERY)
+  paymentStatus PaymentStatus @default(UNPAID)
+
+  idempotencyKey String?
+  adminNote      String?
 
   userId String
   user   User   @relation(fields: [userId], references: [id])
@@ -100,7 +115,10 @@ model Order {
 
   items OrderItem[]
 
+  @@unique([userId, idempotencyKey])
   @@index([userId])
+  @@index([status])
+  @@index([paymentStatus])
 }
 
 // ─── OrderItem ────────────────────────────────────────────────────────────────
@@ -109,15 +127,21 @@ model Order {
 // independent of Product.price, which can change freely after the order.
 
 model OrderItem {
-  id              String  @id @default(cuid())
-  quantity        Int
-  priceAtPurchase Decimal @db.Decimal(10, 2) // ← snapshot of price at checkout
+  id       String @id @default(cuid())
+  quantity Int
+
+  priceAtPurchase Decimal @db.Decimal(10, 2)
+  subtotalAmount  Decimal @db.Decimal(10, 2)
+
+  productNameAtPurchase   String
+  productSlugAtPurchase   String
+  productImagesAtPurchase String[]
 
   orderId String
   order   Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
 
-  productId String
-  product   Product @relation(fields: [productId], references: [id])
+  productId String?
+  product   Product? @relation(fields: [productId], references: [id], onDelete: SetNull)
 
   @@index([orderId])
   @@index([productId])
