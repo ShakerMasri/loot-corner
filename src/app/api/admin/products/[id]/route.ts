@@ -1,42 +1,273 @@
+import { Prisma } from "@prisma/client";
 import { NextResponse } from "next/server";
-import { auth } from "~/server/auth";
-import { db } from "~/server/db";
+import { z } from "zod";
+import { requireAdmin } from "~/lib/admin";
+import { prisma } from "~/lib/prisma";
 import { updateProductSchema } from "~/lib/validations";
 
-type Params = {
+type ProductRouteProps = {
   params: Promise<{
     id: string;
   }>;
 };
 
-export async function PATCH(req: Request, { params }: Params) {
-  const session = await auth();
+const productParamsSchema = z.object({
+  id: z.string().min(1, "Product ID is required."),
+});
 
-  if (session?.user?.role !== "ADMIN") {
-    return NextResponse.json({ message: "Not found" }, { status: 404 });
+function serializeProduct(product: {
+  id: string;
+  name: string;
+  slug: string;
+  description: string | null;
+  price: Prisma.Decimal;
+  stock: number;
+  images: string[];
+  isArchived: boolean;
+  isFeatured: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+  category: {
+    id: string;
+    name: string;
+    slug: string;
+  };
+}) {
+  return {
+    ...product,
+    price: product.price.toString(),
+    createdAt: product.createdAt.toISOString(),
+    updatedAt: product.updatedAt.toISOString(),
+  };
+}
+
+export async function GET(_request: Request, { params }: ProductRouteProps) {
+  const admin = await requireAdmin();
+
+  if (!admin.ok) {
+    return admin.response;
   }
 
   const { id } = await params;
-  const body = await req.json();
+  const parsedParams = productParamsSchema.safeParse({ id });
 
-  const result = updateProductSchema.safeParse(body);
+  if (!parsedParams.success) {
+    return NextResponse.json({ message: "Not found." }, { status: 404 });
+  }
 
-  if (!result.success) {
+  try {
+    const product = await prisma.product.findUnique({
+      where: {
+        id: parsedParams.data.id,
+      },
+      select: {
+        id: true,
+        name: true,
+        slug: true,
+        description: true,
+        price: true,
+        stock: true,
+        images: true,
+        isArchived: true,
+        isFeatured: true,
+        createdAt: true,
+        updatedAt: true,
+        category: {
+          select: {
+            id: true,
+            name: true,
+            slug: true,
+          },
+        },
+      },
+    });
+
+    if (!product) {
+      return NextResponse.json({ message: "Not found." }, { status: 404 });
+    }
+
+    return NextResponse.json({
+      product: serializeProduct(product),
+    });
+  } catch {
+    return NextResponse.json(
+      { message: "Failed to load product." },
+      { status: 500 },
+    );
+  }
+}
+
+export async function PATCH(request: Request, { params }: ProductRouteProps) {
+  const admin = await requireAdmin();
+
+  if (!admin.ok) {
+    return admin.response;
+  }
+
+  const { id } = await params;
+  const parsedParams = productParamsSchema.safeParse({ id });
+
+  if (!parsedParams.success) {
+    return NextResponse.json({ message: "Not found." }, { status: 404 });
+  }
+
+  const body: unknown = await request.json().catch(() => null);
+  const parsedBody = updateProductSchema.safeParse(body);
+
+  if (!parsedBody.success) {
     return NextResponse.json(
       {
-        message: "Invalid input",
-        errors: result.error.flatten().fieldErrors,
+        message: "Invalid input.",
+        errors: parsedBody.error.flatten().fieldErrors,
       },
       { status: 400 },
     );
   }
 
-  const product = await db.product.update({
-    where: {
-      id,
-    },
-    data: result.data,
-  });
+  try {
+    if (parsedBody.data.categoryId) {
+      const category = await prisma.category.findUnique({
+        where: {
+          id: parsedBody.data.categoryId,
+        },
+        select: {
+          id: true,
+        },
+      });
 
-  return NextResponse.json(product);
+      if (!category) {
+        return NextResponse.json(
+          {
+            message: "Invalid input.",
+            errors: {
+              categoryId: ["Category not found."],
+            },
+          },
+          { status: 400 },
+        );
+      }
+    }
+
+    const product = await prisma.product.update({
+      where: {
+        id: parsedParams.data.id,
+      },
+      data: parsedBody.data,
+      select: {
+        id: true,
+        name: true,
+        slug: true,
+        description: true,
+        price: true,
+        stock: true,
+        images: true,
+        isArchived: true,
+        isFeatured: true,
+        createdAt: true,
+        updatedAt: true,
+        category: {
+          select: {
+            id: true,
+            name: true,
+            slug: true,
+          },
+        },
+      },
+    });
+
+    return NextResponse.json({
+      message: "Product updated successfully.",
+      product: serializeProduct(product),
+    });
+  } catch (error) {
+    if (
+      error instanceof Prisma.PrismaClientKnownRequestError &&
+      error.code === "P2025"
+    ) {
+      return NextResponse.json({ message: "Not found." }, { status: 404 });
+    }
+
+    if (
+      error instanceof Prisma.PrismaClientKnownRequestError &&
+      error.code === "P2002"
+    ) {
+      return NextResponse.json(
+        {
+          message: "Invalid input.",
+          errors: {
+            slug: ["This slug is already used."],
+          },
+        },
+        { status: 400 },
+      );
+    }
+
+    return NextResponse.json(
+      { message: "Failed to update product." },
+      { status: 500 },
+    );
+  }
+}
+
+export async function DELETE(_request: Request, { params }: ProductRouteProps) {
+  const admin = await requireAdmin();
+
+  if (!admin.ok) {
+    return admin.response;
+  }
+
+  const { id } = await params;
+  const parsedParams = productParamsSchema.safeParse({ id });
+
+  if (!parsedParams.success) {
+    return NextResponse.json({ message: "Not found." }, { status: 404 });
+  }
+
+  try {
+    const product = await prisma.product.update({
+      where: {
+        id: parsedParams.data.id,
+      },
+      data: {
+        isArchived: true,
+      },
+      select: {
+        id: true,
+        name: true,
+        slug: true,
+        description: true,
+        price: true,
+        stock: true,
+        images: true,
+        isArchived: true,
+        isFeatured: true,
+        createdAt: true,
+        updatedAt: true,
+        category: {
+          select: {
+            id: true,
+            name: true,
+            slug: true,
+          },
+        },
+      },
+    });
+
+    return NextResponse.json({
+      message: "Product archived successfully.",
+      product: serializeProduct(product),
+    });
+  } catch (error) {
+    if (
+      error instanceof Prisma.PrismaClientKnownRequestError &&
+      error.code === "P2025"
+    ) {
+      return NextResponse.json({ message: "Not found." }, { status: 404 });
+    }
+
+    return NextResponse.json(
+      { message: "Failed to archive product." },
+      { status: 500 },
+    );
+  }
 }

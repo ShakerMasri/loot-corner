@@ -29,20 +29,30 @@ enum MessageSender {
   ADMIN
 }
 
+enum PaymentMethod {
+  CASH_ON_DELIVERY
+}
+
+enum PaymentStatus {
+  UNPAID
+  PAID
+}
+
 // ─── User ─────────────────────────────────────────────────────────────────────
 
 model User {
-  id             String    @id @default(cuid())
-  email          String    @unique
+  id            String    @id @default(cuid())
+  email         String    @unique
   emailVerified DateTime?
-  passwordHash   String
-  name           String
-  role           Role      @default(CUSTOMER)
-  createdAt      DateTime  @default(now())
-  updatedAt      DateTime  @updatedAt
+  passwordHash  String
+  name          String
+  role          Role      @default(CUSTOMER)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
 
-  orders         Order[]
-  messages       Message[]
+  orders    Order[]
+  messages  Message[]
+  cartItems CartItem[]
 
   @@index([email])
 }
@@ -50,34 +60,35 @@ model User {
 // ─── Category ─────────────────────────────────────────────────────────────────
 
 model Category {
-  id        String    @id @default(cuid())
-  name      String    @unique   // e.g. "Figures", "Posters", "Accessories"
-  slug      String    @unique   // e.g. "figures", "posters"
-  createdAt DateTime  @default(now())
+  id        String   @id @default(cuid())
+  name      String   @unique // e.g. "Figures", "Posters", "Accessories"
+  slug      String   @unique // e.g. "figures", "posters"
+  createdAt DateTime @default(now())
 
-  products  Product[]
+  products Product[]
 }
 
 // ─── Product ──────────────────────────────────────────────────────────────────
 
 model Product {
-  id          String    @id @default(cuid())
+  id          String   @id @default(cuid())
   name        String
-  slug        String    @unique
+  slug        String   @unique
   description String?
-  price       Decimal   @db.Decimal(10, 2)  // current live price
-  stock       Int       @default(0)          // units available right now
-  images      String[]                       // array of Cloudinary URLs
-  isArchived  Boolean   @default(false)      // hide without deleting
-  isFeatured  Boolean   @default(false)
+  price       Decimal  @db.Decimal(10, 2) // current live price
+  stock       Int      @default(0) // units available right now
+  images      String[] // array of Cloudinary URLs
+  isArchived  Boolean  @default(false) // hide without deleting
+  isFeatured  Boolean  @default(false)
 
-  categoryId  String
-  category    Category  @relation(fields: [categoryId], references: [id])
+  categoryId String
+  category   Category @relation(fields: [categoryId], references: [id])
 
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  orderItems  OrderItem[]
+  orderItems OrderItem[]
+  cartItems  CartItem[]
 
   @@index([categoryId])
   @@index([slug])
@@ -88,17 +99,26 @@ model Product {
 model Order {
   id          String      @id @default(cuid())
   status      OrderStatus @default(PENDING)
-  totalAmount Decimal     @db.Decimal(10, 2) // sum of all OrderItem subtotals
+  totalAmount Decimal     @db.Decimal(10, 2)
 
-  userId      String
-  user        User        @relation(fields: [userId], references: [id])
+  paymentMethod PaymentMethod @default(CASH_ON_DELIVERY)
+  paymentStatus PaymentStatus @default(UNPAID)
 
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
+  idempotencyKey String?
+  adminNote      String?
 
-  items       OrderItem[]
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
 
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  items OrderItem[]
+
+  @@unique([userId, idempotencyKey])
   @@index([userId])
+  @@index([status])
+  @@index([paymentStatus])
 }
 
 // ─── OrderItem ────────────────────────────────────────────────────────────────
@@ -107,17 +127,46 @@ model Order {
 // independent of Product.price, which can change freely after the order.
 
 model OrderItem {
-  id               String   @id @default(cuid())
-  quantity         Int
-  priceAtPurchase  Decimal  @db.Decimal(10, 2)  // ← snapshot of price at checkout
+  id       String @id @default(cuid())
+  quantity Int
 
-  orderId          String
-  order            Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  priceAtPurchase Decimal @db.Decimal(10, 2)
+  subtotalAmount  Decimal @db.Decimal(10, 2)
 
-  productId        String
-  product          Product  @relation(fields: [productId], references: [id])
+  productNameAtPurchase   String
+  productSlugAtPurchase   String
+  productImagesAtPurchase String[]
+
+  orderId String
+  order   Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  productId String?
+  product   Product? @relation(fields: [productId], references: [id], onDelete: SetNull)
 
   @@index([orderId])
+  @@index([productId])
+}
+
+// ─── CartItem ────────────────────────────────────────────────────────────────
+// Logged-in customer cart.
+// Adding to cart does not reduce stock.
+// Stock is checked and reduced later during checkout.
+
+model CartItem {
+  id       String @id @default(cuid())
+  quantity Int
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  productId String
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, productId])
+  @@index([userId])
   @@index([productId])
 }
 
@@ -129,11 +178,11 @@ model Message {
   id        String        @id @default(cuid())
   body      String
   sender    MessageSender
-  isRead    Boolean       @default(false)  // for unread badge in admin panel
+  isRead    Boolean       @default(false) // for unread badge in admin panel
   createdAt DateTime      @default(now())
 
-  userId    String        // always the customer's ID, regardless of who sent it
-  user      User          @relation(fields: [userId], references: [id])
+  userId String // always the customer's ID, regardless of who sent it
+  user   User   @relation(fields: [userId], references: [id])
 
   @@index([userId])
   @@index([createdAt])
