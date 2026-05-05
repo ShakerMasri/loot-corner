@@ -68,7 +68,23 @@ export const createProductSchema = z.object({
   categoryId: z.string().min(1, "Category is required"),
 });
 
-export const updateProductSchema = createProductSchema.partial();
+export const createCategorySchema = z.object({
+  name: z
+    .string()
+    .min(2, "Name must be at least 2 characters long.")
+    .max(100, "Name is too long."),
+
+  slug: z
+    .string()
+    .min(2, "Slug must be at least 2 characters long.")
+    .max(100, "Slug is too long.")
+    .regex(/^[a-z0-9-]+$/, "Slug must be lowercase and use hyphens only."),
+});
+export const updateProductSchema = createProductSchema
+  .omit({
+    isArchived: true,
+  })
+  .partial();
 
 export type RegisterInput = z.infer<typeof registerSchema>;
 export type LoginInput = z.infer<typeof loginSchema>;
