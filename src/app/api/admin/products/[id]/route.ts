@@ -15,24 +15,32 @@ const productParamsSchema = z.object({
   id: z.string().min(1, "Product ID is required."),
 });
 
-function serializeProduct(product: {
-  id: string;
-  name: string;
-  slug: string;
-  description: string | null;
-  price: Prisma.Decimal;
-  stock: number;
-  images: string[];
-  isArchived: boolean;
-  isFeatured: boolean;
-  createdAt: Date;
-  updatedAt: Date;
+const adminProductSelect = {
+  id: true,
+  name: true,
+  slug: true,
+  description: true,
+  price: true,
+  stock: true,
+  images: true,
+  isArchived: true,
+  isFeatured: true,
+  createdAt: true,
+  updatedAt: true,
   category: {
-    id: string;
-    name: string;
-    slug: string;
-  };
-}) {
+    select: {
+      id: true,
+      name: true,
+      slug: true,
+    },
+  },
+} satisfies Prisma.ProductSelect;
+
+type AdminProduct = Prisma.ProductGetPayload<{
+  select: typeof adminProductSelect;
+}>;
+
+function serializeProduct(product: AdminProduct) {
   return {
     ...product,
     price: product.price.toString(),
@@ -60,26 +68,7 @@ export async function GET(_request: Request, { params }: ProductRouteProps) {
       where: {
         id: parsedParams.data.id,
       },
-      select: {
-        id: true,
-        name: true,
-        slug: true,
-        description: true,
-        price: true,
-        stock: true,
-        images: true,
-        isArchived: true,
-        isFeatured: true,
-        createdAt: true,
-        updatedAt: true,
-        category: {
-          select: {
-            id: true,
-            name: true,
-            slug: true,
-          },
-        },
-      },
+      select: adminProductSelect,
     });
 
     if (!product) {
@@ -124,6 +113,18 @@ export async function PATCH(request: Request, { params }: ProductRouteProps) {
     );
   }
 
+  if (Object.keys(parsedBody.data).length === 0) {
+    return NextResponse.json(
+      {
+        message: "Invalid input.",
+        errors: {
+          _form: ["At least one product field is required."],
+        },
+      },
+      { status: 400 },
+    );
+  }
+
   try {
     if (parsedBody.data.categoryId) {
       const category = await prisma.category.findUnique({
@@ -153,26 +154,7 @@ export async function PATCH(request: Request, { params }: ProductRouteProps) {
         id: parsedParams.data.id,
       },
       data: parsedBody.data,
-      select: {
-        id: true,
-        name: true,
-        slug: true,
-        description: true,
-        price: true,
-        stock: true,
-        images: true,
-        isArchived: true,
-        isFeatured: true,
-        createdAt: true,
-        updatedAt: true,
-        category: {
-          select: {
-            id: true,
-            name: true,
-            slug: true,
-          },
-        },
-      },
+      select: adminProductSelect,
     });
 
     return NextResponse.json({
@@ -231,26 +213,7 @@ export async function DELETE(_request: Request, { params }: ProductRouteProps) {
       data: {
         isArchived: true,
       },
-      select: {
-        id: true,
-        name: true,
-        slug: true,
-        description: true,
-        price: true,
-        stock: true,
-        images: true,
-        isArchived: true,
-        isFeatured: true,
-        createdAt: true,
-        updatedAt: true,
-        category: {
-          select: {
-            id: true,
-            name: true,
-            slug: true,
-          },
-        },
-      },
+      select: adminProductSelect,
     });
 
     return NextResponse.json({
