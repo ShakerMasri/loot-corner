@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { OptimizedImage } from "~/components/ui/OptimizedImage";
 
 type ProductCardProps = {
   product: {
@@ -8,11 +9,19 @@ type ProductCardProps = {
     price: string;
     stock: number;
     images: string[];
+    isFeatured?: boolean;
     category: {
       id: string;
       name: string;
       slug: string;
     };
+  };
+  labels: {
+    noImage: string;
+    featured: string;
+    soldOut: string;
+    out: string;
+    left: string;
   };
 };
 
@@ -20,47 +29,68 @@ function formatPrice(price: string) {
   return `$${Number(price).toFixed(2)}`;
 }
 
-export function ProductCard({ product }: ProductCardProps) {
+export function ProductCard({ product, labels }: ProductCardProps) {
   const mainImage = product.images.at(0);
   const isOutOfStock = product.stock <= 0;
 
   return (
     <Link
       href={`/products/${product.slug}`}
-      className="block rounded-lg border border-gray-200 bg-white p-4 transition hover:shadow-md"
+      className="group block overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-md dark:border-zinc-800 dark:bg-zinc-900"
     >
-      <div className="aspect-square overflow-hidden rounded-md bg-gray-100">
+      <div className="relative aspect-square overflow-hidden bg-zinc-100 dark:bg-zinc-800">
         {mainImage ? (
-          <img
+          <OptimizedImage
             src={mainImage}
             alt={product.name}
-            className="h-full w-full object-cover"
+            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
+            className="object-cover transition duration-300 group-hover:scale-105"
           />
         ) : (
-          <div className="flex h-full items-center justify-center text-sm text-gray-500">
-            No image
+          <div className="flex h-full items-center justify-center text-sm text-zinc-500 dark:text-zinc-400">
+            {labels.noImage}
           </div>
+        )}
+
+        {product.isFeatured && (
+          <span className="absolute top-3 left-3 rounded-full bg-orange-600 px-3 py-1 text-xs font-semibold text-white">
+            {labels.featured}
+          </span>
+        )}
+
+        {isOutOfStock && (
+          <span className="absolute top-3 right-3 rounded-full bg-red-600 px-3 py-1 text-xs font-semibold text-white">
+            {labels.soldOut}
+          </span>
         )}
       </div>
 
-      <div className="mt-4 space-y-2">
-        <p className="text-xs tracking-wide text-gray-500 uppercase">
-          {product.category.name}
-        </p>
+      <div className="space-y-3 p-4">
+        <div>
+          <p className="text-xs font-semibold tracking-wide text-orange-600 uppercase dark:text-orange-400">
+            {product.category.name}
+          </p>
 
-        <h3 className="font-semibold text-gray-900">{product.name}</h3>
+          <h3 className="mt-1 text-base font-bold text-zinc-950 transition group-hover:text-orange-600 dark:text-white dark:group-hover:text-orange-400">
+            {product.name}
+          </h3>
+        </div>
 
-        <p className="text-sm text-gray-700">{formatPrice(product.price)}</p>
+        <div className="flex items-center justify-between gap-3">
+          <p className="text-lg font-black text-zinc-950 dark:text-white">
+            {formatPrice(product.price)}
+          </p>
 
-        {isOutOfStock ? (
-          <span className="inline-block rounded bg-red-100 px-2 py-1 text-xs text-red-700">
-            Out of stock
-          </span>
-        ) : (
-          <span className="inline-block rounded bg-green-100 px-2 py-1 text-xs text-green-700">
-            In stock: {product.stock}
-          </span>
-        )}
+          {isOutOfStock ? (
+            <span className="rounded-full bg-red-50 px-3 py-1 text-xs font-semibold text-red-700 dark:bg-red-950 dark:text-red-300">
+              {labels.out}
+            </span>
+          ) : (
+            <span className="rounded-full bg-green-50 px-3 py-1 text-xs font-semibold text-green-700 dark:bg-green-950 dark:text-green-300">
+              {product.stock} {labels.left}
+            </span>
+          )}
+        </div>
       </div>
     </Link>
   );
