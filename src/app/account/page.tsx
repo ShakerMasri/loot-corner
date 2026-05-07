@@ -1,17 +1,21 @@
-import { auth } from "~/server/auth";
 import { redirect } from "next/navigation";
+import { AccountClient } from "~/components/account/AccountClient";
+import { auth } from "~/server/auth";
 
 export default async function AccountPage() {
   const session = await auth();
 
   if (!session?.user) {
-    redirect("/login");
+    redirect("/login?callbackUrl=/account");
   }
 
   return (
-    <main style={{ padding: 40 }}>
-      <h1>Account Page</h1>
-      <pre>{JSON.stringify(session, null, 2)}</pre>
-    </main>
+    <AccountClient
+      user={{
+        name: session.user.name ?? "",
+        email: session.user.email ?? "",
+        role: session.user.role ?? "CUSTOMER",
+      }}
+    />
   );
 }

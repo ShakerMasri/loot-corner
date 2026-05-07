@@ -1,7 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useAppPreferences } from "~/components/providers/AppPreferencesProvider";
+import { OptimizedImage } from "~/components/ui/OptimizedImage";
 
 type OrderItem = {
   id: string;
@@ -28,126 +30,386 @@ type OrdersResponse = {
   message?: string;
 };
 
-function formatPrice(price: string) {
+const statusStyles: Record<string, string> = {
+  PENDING:
+    "bg-yellow-50 text-yellow-800 dark:bg-yellow-950 dark:text-yellow-200",
+  PROCESSING: "bg-blue-50 text-blue-800 dark:bg-blue-950 dark:text-blue-200",
+  SHIPPED:
+    "bg-purple-50 text-purple-800 dark:bg-purple-950 dark:text-purple-200",
+  DELIVERED: "bg-green-50 text-green-800 dark:bg-green-950 dark:text-green-200",
+  CANCELLED: "bg-red-50 text-red-800 dark:bg-red-950 dark:text-red-200",
+};
+
+const paymentStatusStyles: Record<string, string> = {
+  UNPAID:
+    "bg-orange-50 text-orange-800 dark:bg-orange-950 dark:text-orange-200",
+  PAID: "bg-green-50 text-green-800 dark:bg-green-950 dark:text-green-200",
+};
+
+function formatPrice(price: string | number) {
   return `$${Number(price).toFixed(2)}`;
 }
 
+function formatDate(date: string, language: "en" | "ar") {
+  return new Intl.DateTimeFormat(language, {
+    dateStyle: "medium",
+    timeStyle: "short",
+  }).format(new Date(date));
+}
+
+function formatFallbackLabel(value: string) {
+  return value
+    .toLowerCase()
+    .split("_")
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ");
+}
+
 export function OrdersClient() {
+  const { t, language } = useAppPreferences();
+
   const [orders, setOrders] = useState<Order[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [message, setMessage] = useState("");
 
-  useEffect(() => {
-    async function loadOrders() {
-      setIsLoading(true);
-      setMessage("");
-
-      try {
-        const response = await fetch("/api/orders");
-        const data = (await response.json()) as OrdersResponse;
-
-        if (!response.ok) {
-          setOrders([]);
-          setMessage(data.message ?? "Failed to load orders.");
-          return;
-        }
-
-        setOrders(data.orders ?? []);
-      } catch {
-        setOrders([]);
-        setMessage("Failed to connect to the server.");
-      } finally {
-        setIsLoading(false);
+  const totalSpent = useMemo(() => {
+    return orders.reduce((sum, order) => {
+      if (order.status === "CANCELLED") {
+        return sum;
       }
-    }
 
+      return sum + Number(order.totalAmount);
+    }, 0);
+  }, [orders]);
+
+  const activeOrdersCount = useMemo(() => {
+    return orders.filter((order) => {
+      return order.status !== "DELIVERED" && order.status !== "CANCELLED";
+    }).length;
+  }, [orders]);
+
+  function getStatusLabel(status: string) {
+    return t.orders.statuses[status] ?? formatFallbackLabel(status);
+  }
+
+  function getPaymentMethodLabel(paymentMethod: string) {
+    return (
+      t.orders.paymentMethods[paymentMethod] ??
+      formatFallbackLabel(paymentMethod)
+    );
+  }
+
+  function getPaymentStatusLabel(paymentStatus: string) {
+    return (
+      t.orders.paymentStatuses[paymentStatus] ??
+      formatFallbackLabel(paymentStatus)
+    );
+  }
+
+  async function loadOrders() {
+    setIsLoading(true);
+    setMessage("");
+
+    try {
+      const response = await fetch("/api/orders");
+      const data = (await response.json()) as OrdersResponse;
+
+      if (!response.ok) {
+        setOrders([]);
+        setMessage(data.message ?? t.orders.failedToLoad);
+        return;
+      }
+
+      setOrders(data.orders ?? []);
+    } catch {
+      setOrders([]);
+      setMessage(t.orders.failedToConnect);
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
+  useEffect(() => {
     void loadOrders();
+    // We intentionally load once on mount. Language changes only affect labels.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   if (isLoading) {
-    return <p className="text-gray-600">Loading orders...</p>;
+    return (
+      <section className="space-y-6">
+        <div className="rounded-3xl border border-zinc-200 bg-white p-5 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+          <div className="h-8 w-44 animate-pulse rounded bg-zinc-200 dark:bg-zinc-800" />
+          <div className="mt-3 h-4 w-80 max-w-full animate-pulse rounded bg-zinc-200 dark:bg-zinc-800" />
+        </div>
+
+        <div className="grid gap-4 sm:grid-cols-3">
+          {Array.from({ length: 3 }).map((_, index) => (
+            <div
+              key={index}
+              className="h-24 animate-pulse rounded-3xl bg-zinc-200 dark:bg-zinc-800"
+            />
+          ))}
+        </div>
+
+        <div className="space-y-4">
+          {Array.from({ length: 3 }).map((_, index) => (
+            <div
+              key={index}
+              className="h-56 animate-pulse rounded-3xl bg-zinc-200 dark:bg-zinc-800"
+            />
+          ))}
+        </div>
+      </section>
+    );
   }
 
-  if (message) {
+  if (message && orders.length === 0) {
     return (
-      <div className="rounded border border-gray-200 p-6">
-        <p className="text-gray-700">{message}</p>
-      </div>
+      <section className="rounded-3xl border border-zinc-200 bg-white p-8 text-center shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+        <h1 className="text-2xl font-black text-zinc-950 dark:text-white">
+          {t.orders.ordersUnavailable}
+        </h1>
+
+        <p className="mt-3 text-sm leading-6 text-zinc-600 dark:text-zinc-400">
+          {message}
+        </p>
+
+        <button
+          type="button"
+          onClick={() => void loadOrders()}
+          className="mt-6 rounded-full bg-zinc-950 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-zinc-800 dark:bg-white dark:text-zinc-950 dark:hover:bg-zinc-200"
+        >
+          {t.orders.tryAgain}
+        </button>
+      </section>
     );
   }
 
   if (orders.length === 0) {
     return (
-      <div className="rounded border border-gray-200 p-6">
-        <p className="text-gray-700">You do not have any orders yet.</p>
-        <Link href="/products" className="mt-3 inline-block underline">
-          Browse products
+      <section className="rounded-3xl border border-zinc-200 bg-white p-8 text-center shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+        <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-orange-50 text-2xl dark:bg-orange-950">
+          📦
+        </div>
+
+        <h1 className="mt-5 text-2xl font-black text-zinc-950 dark:text-white">
+          {t.orders.noOrdersTitle}
+        </h1>
+
+        <p className="mx-auto mt-3 max-w-md text-sm leading-6 text-zinc-600 dark:text-zinc-400">
+          {t.orders.noOrdersDescription}
+        </p>
+
+        <Link
+          href="/products"
+          className="mt-6 inline-flex rounded-full bg-zinc-950 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-zinc-800 dark:bg-white dark:text-zinc-950 dark:hover:bg-zinc-200"
+        >
+          {t.orders.browseProducts}
         </Link>
-      </div>
+      </section>
     );
   }
 
   return (
-    <div className="space-y-6">
-      {orders.map((order) => (
-        <article
-          key={order.id}
-          className="rounded-lg border border-gray-200 bg-white p-4"
-        >
-          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-gray-200 pb-3">
-            <div>
-              <h2 className="font-semibold">Order {order.id}</h2>
-              <p className="text-sm text-gray-500">
-                {new Date(order.createdAt).toLocaleString()}
-              </p>
-            </div>
+    <section className="space-y-6">
+      <div className="rounded-3xl border border-zinc-200 bg-white p-5 shadow-sm sm:p-6 dark:border-zinc-800 dark:bg-zinc-900">
+        <p className="text-sm font-semibold tracking-wide text-orange-600 uppercase dark:text-orange-400">
+          {t.orders.badge}
+        </p>
 
-            <div className="text-sm">
-              <p>Status: {order.status}</p>
-              <p>Payment: {order.paymentStatus}</p>
-              <p>Method: Cash on delivery</p>
-            </div>
+        <div className="mt-2 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <h1 className="text-3xl font-black tracking-tight text-zinc-950 sm:text-4xl dark:text-white">
+              {t.orders.title}
+            </h1>
+
+            <p className="mt-2 text-sm leading-6 text-zinc-600 dark:text-zinc-400">
+              {t.orders.description}
+            </p>
           </div>
 
-          <div className="mt-4 space-y-3">
-            {order.items.map((item) => {
-              const image = item.productImagesAtPurchase[0];
+          <button
+            type="button"
+            onClick={() => void loadOrders()}
+            className="w-fit rounded-full border border-zinc-300 px-4 py-2 text-sm font-semibold text-zinc-800 transition hover:bg-zinc-100 dark:border-zinc-700 dark:text-zinc-100 dark:hover:bg-zinc-950"
+          >
+            {t.orders.refresh}
+          </button>
+        </div>
+      </div>
 
-              return (
-                <div key={item.id} className="flex gap-4">
-                  <div className="h-20 w-20 overflow-hidden rounded bg-gray-100">
-                    {image ? (
-                      <img
-                        src={image}
-                        alt={item.productNameAtPurchase}
-                        className="h-full w-full object-cover"
-                      />
-                    ) : (
-                      <div className="flex h-full items-center justify-center text-xs text-gray-500">
-                        No image
-                      </div>
-                    )}
+      <div className="grid gap-4 sm:grid-cols-3">
+        <div className="rounded-3xl border border-zinc-200 bg-white p-5 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+          <p className="text-sm text-zinc-500 dark:text-zinc-400">
+            {t.orders.totalOrders}
+          </p>
+          <p className="mt-2 text-2xl font-black text-zinc-950 dark:text-white">
+            {orders.length}
+          </p>
+        </div>
+
+        <div className="rounded-3xl border border-zinc-200 bg-white p-5 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+          <p className="text-sm text-zinc-500 dark:text-zinc-400">
+            {t.orders.activeOrders}
+          </p>
+          <p className="mt-2 text-2xl font-black text-zinc-950 dark:text-white">
+            {activeOrdersCount}
+          </p>
+        </div>
+
+        <div className="rounded-3xl border border-zinc-200 bg-white p-5 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+          <p className="text-sm text-zinc-500 dark:text-zinc-400">
+            {t.orders.totalSpent}
+          </p>
+          <p className="mt-2 text-2xl font-black text-zinc-950 dark:text-white">
+            {formatPrice(totalSpent)}
+          </p>
+        </div>
+      </div>
+
+      {message && (
+        <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm font-medium text-red-700 dark:border-red-900 dark:bg-red-950 dark:text-red-300">
+          {message}
+        </div>
+      )}
+
+      <div className="space-y-4">
+        {orders.map((order) => {
+          const statusClass =
+            statusStyles[order.status] ??
+            "bg-zinc-100 text-zinc-800 dark:bg-zinc-800 dark:text-zinc-200";
+
+          const paymentStatusClass =
+            paymentStatusStyles[order.paymentStatus] ??
+            "bg-zinc-100 text-zinc-800 dark:bg-zinc-800 dark:text-zinc-200";
+
+          return (
+            <article
+              key={order.id}
+              className="overflow-hidden rounded-3xl border border-zinc-200 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900"
+            >
+              <div className="border-b border-zinc-200 p-5 sm:p-6 dark:border-zinc-800">
+                <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                  <div>
+                    <p className="text-xs font-semibold tracking-wide text-zinc-500 uppercase dark:text-zinc-400">
+                      {t.orders.order}
+                    </p>
+
+                    <h2 className="mt-1 max-w-full truncate font-mono text-sm font-bold text-zinc-950 dark:text-white">
+                      {order.id}
+                    </h2>
+
+                    <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
+                      {t.orders.placed} {formatDate(order.createdAt, language)}
+                    </p>
                   </div>
 
-                  <div className="flex-1">
-                    <p className="font-medium">{item.productNameAtPurchase}</p>
-                    <p className="text-sm text-gray-600">
-                      Qty: {item.quantity} × {formatPrice(item.priceAtPurchase)}
+                  <div className="flex flex-wrap gap-2">
+                    <span
+                      className={`rounded-full px-3 py-1 text-xs font-bold ${statusClass}`}
+                    >
+                      {getStatusLabel(order.status)}
+                    </span>
+
+                    <span
+                      className={`rounded-full px-3 py-1 text-xs font-bold ${paymentStatusClass}`}
+                    >
+                      {getPaymentStatusLabel(order.paymentStatus)}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="mt-5 grid gap-3 text-sm sm:grid-cols-3">
+                  <div className="rounded-2xl bg-zinc-50 p-4 dark:bg-zinc-950">
+                    <p className="text-zinc-500 dark:text-zinc-400">
+                      {t.orders.total}
                     </p>
-                    <p className="text-sm font-semibold">
-                      Subtotal: {formatPrice(item.subtotalAmount)}
+                    <p className="mt-1 font-black text-zinc-950 dark:text-white">
+                      {formatPrice(order.totalAmount)}
+                    </p>
+                  </div>
+
+                  <div className="rounded-2xl bg-zinc-50 p-4 dark:bg-zinc-950">
+                    <p className="text-zinc-500 dark:text-zinc-400">
+                      {t.orders.payment}
+                    </p>
+                    <p className="mt-1 font-semibold text-zinc-950 dark:text-white">
+                      {getPaymentMethodLabel(order.paymentMethod)}
+                    </p>
+                  </div>
+
+                  <div className="rounded-2xl bg-zinc-50 p-4 dark:bg-zinc-950">
+                    <p className="text-zinc-500 dark:text-zinc-400">
+                      {t.orders.items}
+                    </p>
+                    <p className="mt-1 font-semibold text-zinc-950 dark:text-white">
+                      {order.items.reduce(
+                        (sum, item) => sum + item.quantity,
+                        0,
+                      )}
                     </p>
                   </div>
                 </div>
-              );
-            })}
-          </div>
+              </div>
 
-          <div className="mt-4 border-t border-gray-200 pt-3 text-right font-semibold">
-            Total: {formatPrice(order.totalAmount)}
-          </div>
-        </article>
-      ))}
-    </div>
+              <div className="divide-y divide-zinc-200 dark:divide-zinc-800">
+                {order.items.map((item) => {
+                  const image = item.productImagesAtPurchase.at(0);
+
+                  return (
+                    <div
+                      key={item.id}
+                      className="flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:p-6"
+                    >
+                      <Link
+                        href={`/products/${item.productSlugAtPurchase}`}
+                        className="relative h-24 w-full shrink-0 overflow-hidden rounded-2xl bg-zinc-100 sm:w-24 dark:bg-zinc-800"
+                      >
+                        {image ? (
+                          <OptimizedImage
+                            src={image}
+                            alt={item.productNameAtPurchase}
+                            sizes="96px"
+                            className="object-cover transition hover:scale-105"
+                          />
+                        ) : (
+                          <div className="flex h-full items-center justify-center text-xs text-zinc-500 dark:text-zinc-400">
+                            {t.orders.noImage}
+                          </div>
+                        )}
+                      </Link>
+
+                      <div className="min-w-0 flex-1">
+                        <Link
+                          href={`/products/${item.productSlugAtPurchase}`}
+                          className="font-bold text-zinc-950 transition hover:text-orange-600 dark:text-white dark:hover:text-orange-400"
+                        >
+                          {item.productNameAtPurchase}
+                        </Link>
+
+                        <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
+                          {t.orders.quantity}: {item.quantity} ×{" "}
+                          {formatPrice(item.priceAtPurchase)}
+                        </p>
+                      </div>
+
+                      <div className="text-left sm:text-right">
+                        <p className="text-sm text-zinc-500 dark:text-zinc-400">
+                          {t.orders.subtotal}
+                        </p>
+                        <p className="font-black text-zinc-950 dark:text-white">
+                          {formatPrice(item.subtotalAmount)}
+                        </p>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </article>
+          );
+        })}
+      </div>
+    </section>
   );
 }

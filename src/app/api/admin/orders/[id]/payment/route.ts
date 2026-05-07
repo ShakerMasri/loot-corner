@@ -1,9 +1,5 @@
-import {
-  OrderStatus,
-  PaymentMethod,
-  PaymentStatus,
-  Prisma,
-} from "@prisma/client";
+import { OrderStatus, PaymentMethod, PaymentStatus } from "@prisma/client";
+import type { Prisma } from "@prisma/client";
 import { NextResponse } from "next/server";
 import { requireAdmin } from "~/lib/admin";
 import { prisma } from "~/lib/prisma";
