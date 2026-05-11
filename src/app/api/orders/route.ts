@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "~/lib/prisma";
 import { auth } from "~/server/auth";
 import { createOrderSchema } from "~/server/validations/order";
+import { rateLimit } from "~/lib/rate-limit";
 
 type OrderWithItems = {
   id: string;
@@ -98,6 +99,12 @@ export async function POST(request: Request) {
   }
 
   const userId = session.user.id;
+
+  const limited = await rateLimit(request, "orderCreate", userId);
+
+  if (!limited.ok) {
+    return limited.response;
+  }
 
   const body: unknown = await request.json().catch(() => null);
   const parsed = createOrderSchema.safeParse(body);

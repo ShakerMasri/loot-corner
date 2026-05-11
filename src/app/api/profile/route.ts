@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "~/lib/prisma";
 import { updateProfileSchema } from "~/lib/validations";
 import { auth } from "~/server/auth";
+import { rateLimit } from "~/lib/rate-limit";
 
 export async function PATCH(request: Request) {
   const session = await auth();
@@ -11,6 +12,12 @@ export async function PATCH(request: Request) {
       { message: "You must be logged in." },
       { status: 401 },
     );
+  }
+
+  const limited = await rateLimit(request, "profileUpdate", session.user.id);
+
+  if (!limited.ok) {
+    return limited.response;
   }
 
   const body: unknown = await request.json().catch(() => null);

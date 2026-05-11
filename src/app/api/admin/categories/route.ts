@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { requireAdmin } from "~/lib/admin";
 import { prisma } from "~/lib/prisma";
 import { createCategorySchema } from "~/lib/validations";
+import { rateLimit } from "~/lib/rate-limit";
 
 const adminCategorySelect = {
   id: true,
@@ -15,6 +16,12 @@ export async function POST(request: Request) {
 
   if (!admin.ok) {
     return admin.response;
+  }
+
+  const limited = await rateLimit(request, "adminMutation", admin.user.id);
+
+  if (!limited.ok) {
+    return limited.response;
   }
 
   const body: unknown = await request.json().catch(() => null);

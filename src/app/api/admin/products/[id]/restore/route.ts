@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { requireAdmin } from "~/lib/admin";
 import { prisma } from "~/lib/prisma";
+import { rateLimit } from "~/lib/rate-limit";
 
 type RestoreProductRouteProps = {
   params: Promise<{
@@ -49,13 +50,19 @@ function serializeProduct(product: AdminProduct) {
 }
 
 export async function POST(
-  _request: Request,
+  request: Request,
   { params }: RestoreProductRouteProps,
 ) {
   const admin = await requireAdmin();
 
   if (!admin.ok) {
     return admin.response;
+  }
+
+  const limited = await rateLimit(request, "adminMutation", admin.user.id);
+
+  if (!limited.ok) {
+    return limited.response;
   }
 
   const { id } = await params;

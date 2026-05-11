@@ -4,6 +4,7 @@ import { z } from "zod";
 import { requireAdmin } from "~/lib/admin";
 import { prisma } from "~/lib/prisma";
 import { createCategorySchema } from "~/lib/validations";
+import { rateLimit } from "~/lib/rate-limit";
 
 type CategoryRouteProps = {
   params: Promise<{
@@ -21,6 +22,12 @@ const updateCategorySchema = createCategorySchema.partial();
 export async function PATCH(request: Request, { params }: CategoryRouteProps) {
   const admin = await requireAdmin();
   if (!admin.ok) return admin.response;
+
+  const limited = await rateLimit(request, "adminMutation", admin.user.id);
+
+  if (!limited.ok) {
+    return limited.response;
+  }
 
   const { id } = await params;
   const parsedParams = paramsSchema.safeParse({ id });
@@ -96,12 +103,15 @@ export async function PATCH(request: Request, { params }: CategoryRouteProps) {
     );
   }
 }
-export async function DELETE(
-  _request: Request,
-  { params }: CategoryRouteProps,
-) {
+export async function DELETE(request: Request, { params }: CategoryRouteProps) {
   const admin = await requireAdmin();
   if (!admin.ok) return admin.response;
+
+  const limited = await rateLimit(request, "adminMutation", admin.user.id);
+
+  if (!limited.ok) {
+    return limited.response;
+  }
 
   const { id } = await params;
   const parsedParams = paramsSchema.safeParse({ id });

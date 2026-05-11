@@ -4,6 +4,7 @@ import { z } from "zod";
 import { requireAdmin } from "~/lib/admin";
 import { prisma } from "~/lib/prisma";
 import { updateProductSchema } from "~/lib/validations";
+import { rateLimit } from "~/lib/rate-limit";
 
 type ProductRouteProps = {
   params: Promise<{
@@ -91,6 +92,12 @@ export async function PATCH(request: Request, { params }: ProductRouteProps) {
 
   if (!admin.ok) {
     return admin.response;
+  }
+
+  const limited = await rateLimit(request, "adminMutation", admin.user.id);
+
+  if (!limited.ok) {
+    return limited.response;
   }
 
   const { id } = await params;
@@ -191,11 +198,17 @@ export async function PATCH(request: Request, { params }: ProductRouteProps) {
   }
 }
 
-export async function DELETE(_request: Request, { params }: ProductRouteProps) {
+export async function DELETE(request: Request, { params }: ProductRouteProps) {
   const admin = await requireAdmin();
 
   if (!admin.ok) {
     return admin.response;
+  }
+
+  const limited = await rateLimit(request, "adminMutation", admin.user.id);
+
+  if (!limited.ok) {
+    return limited.response;
   }
 
   const { id } = await params;
