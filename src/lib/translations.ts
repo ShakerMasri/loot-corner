@@ -174,6 +174,36 @@ export type TranslationDictionary = {
     failedToConnect: string;
     signOut: string;
     signingOut: string;
+    forgotPassword: string;
+    forgotPasswordBadge: string;
+    forgotPasswordHeroTitle: string;
+    forgotPasswordHeroDescription: string;
+    forgotPasswordTitle: string;
+    forgotPasswordDescription: string;
+    sendResetLink: string;
+    sendingResetLink: string;
+    resetRequestSuccess: string;
+    resetRequestFailed: string;
+    rememberPassword: string;
+    backToLogin: string;
+    setNewPasswordBadge: string;
+    setNewPasswordHeroTitle: string;
+    setNewPasswordHeroDescription: string;
+    resetPasswordTitle: string;
+    resetPasswordDescription: string;
+    newPassword: string;
+    confirmPassword: string;
+    repeatPassword: string;
+    resetPassword: string;
+    resettingPassword: string;
+    resetMissingToken: string;
+    resetPasswordTooShort: string;
+    passwordsDoNotMatch: string;
+    resetPasswordFailed: string;
+    resetPasswordSuccess: string;
+    invalidResetLink: string;
+    requestNewResetLink: string;
+    loadingResetForm: string;
   };
   account: {
     badge: string;
@@ -190,7 +220,43 @@ export type TranslationDictionary = {
     adminDashboardDescription: string;
     noEmail: string;
     customer: string;
+    accountSetupRequired: string;
+    accountSetupDescription: string;
+    emailVerification: string;
+    verified: string;
+    notVerified: string;
+    phoneNumber: string;
+    added: string;
+    missing: string;
+    updateProfile: string;
+    updateProfileDescription: string;
+    sendingVerificationEmail: string;
+    resendVerificationEmail: string;
+    failedToSendVerificationEmail: string;
+    verificationEmailSent: string;
+    emailStatus: string;
+    phone: string;
+    notAdded: string;
   };
+  profile: {
+    badge: string;
+    title: string;
+    description: string;
+    emailStatus: string;
+    verified: string;
+    notVerified: string;
+    emailChangeHelp: string;
+    name: string;
+    phoneNumber: string;
+    phoneHelp: string;
+    saveProfile: string;
+    saving: string;
+    backToAccount: string;
+    failedToUpdate: string;
+    updatedSuccessfully: string;
+    failedToConnect: string;
+  };
+
   admin: {
     dashboard: {
       badge: string;
@@ -548,6 +614,42 @@ export const translations: Record<Language, TranslationDictionary> = {
       failedToConnect: "Failed to connect to the server.",
       signOut: "Sign out",
       signingOut: "Signing out...",
+      forgotPassword: "Forgot password?",
+      forgotPasswordBadge: "Account recovery",
+      forgotPasswordHeroTitle: "Reset your password securely.",
+      forgotPasswordHeroDescription:
+        "Enter your account email and we will send a reset link. In development, the link appears in your terminal because SMTP is not configured yet.",
+      forgotPasswordTitle: "Forgot password?",
+      forgotPasswordDescription:
+        "Enter your email address and check your inbox for a reset link.",
+      sendResetLink: "Send reset link",
+      sendingResetLink: "Sending reset link...",
+      resetRequestSuccess:
+        "If an account exists with this email, a password reset link has been sent.",
+      resetRequestFailed: "Failed to request password reset. Please try again.",
+      rememberPassword: "Remember your password?",
+      backToLogin: "Back to login",
+      setNewPasswordBadge: "Set new password",
+      setNewPasswordHeroTitle: "Choose a new secure password.",
+      setNewPasswordHeroDescription:
+        "Use at least 8 characters. After reset, old sessions are revoked by the auth configuration.",
+      resetPasswordTitle: "Reset password",
+      resetPasswordDescription: "Enter your new password below.",
+      newPassword: "New password",
+      confirmPassword: "Confirm password",
+      repeatPassword: "Repeat password",
+      resetPassword: "Reset password",
+      resettingPassword: "Resetting password...",
+      resetMissingToken: "This reset link is missing a token.",
+      resetPasswordTooShort: "Password must be at least 8 characters.",
+      passwordsDoNotMatch: "Passwords do not match.",
+      resetPasswordFailed: "Failed to reset password.",
+      resetPasswordSuccess:
+        "Password reset successfully. Redirecting to login...",
+      invalidResetLink:
+        "This reset link is invalid or expired. Please request a new one.",
+      requestNewResetLink: "Request a new reset link",
+      loadingResetForm: "Loading reset form...",
     },
     account: {
       badge: "Account",
@@ -565,6 +667,47 @@ export const translations: Record<Language, TranslationDictionary> = {
       adminDashboardDescription: "Manage products, orders, and store data.",
       noEmail: "No email available",
       customer: "Customer",
+      accountSetupRequired: "Account setup required before checkout",
+      accountSetupDescription:
+        "You can browse products and manage your account, but checkout requires a verified email and a phone number so the store admin can confirm your order.",
+      emailVerification: "Email verification",
+      verified: "verified",
+      notVerified: "not verified",
+      phoneNumber: "Phone number",
+      added: "added",
+      missing: "missing",
+      updateProfile: "Update profile",
+      updateProfileDescription:
+        "Add or update your phone number before checkout.",
+      sendingVerificationEmail: "Sending verification email...",
+      resendVerificationEmail: "Resend verification email",
+      failedToSendVerificationEmail: "Failed to send verification email.",
+      verificationEmailSent:
+        "Verification email sent. Check your inbox, or check the terminal in development.",
+      emailStatus: "Email status",
+      phone: "Phone",
+      notAdded: "Not added",
+    },
+    profile: {
+      badge: "Profile",
+      title: "Update your profile",
+      description:
+        "Your phone number is used by the store admin to confirm cash-on-delivery orders.",
+      emailStatus: "Email status",
+      verified: "Verified",
+      notVerified: "Not verified",
+      emailChangeHelp:
+        "Email changes will be added later because they need a separate verification flow.",
+      name: "Name",
+      phoneNumber: "Phone number",
+      phoneHelp:
+        "Phone numbers are required before checkout. They are not verified by SMS yet.",
+      saveProfile: "Save profile",
+      saving: "Saving...",
+      backToAccount: "Back to account",
+      failedToUpdate: "Failed to update profile.",
+      updatedSuccessfully: "Profile updated successfully.",
+      failedToConnect: "Failed to connect to the server.",
     },
     admin: {
       dashboard: {
@@ -934,6 +1077,42 @@ export const translations: Record<Language, TranslationDictionary> = {
       failedToConnect: "فشل الاتصال بالخادم.",
       signOut: "تسجيل الخروج",
       signingOut: "جار تسجيل الخروج...",
+      forgotPassword: "نسيت كلمة المرور؟",
+      forgotPasswordBadge: "استعادة الحساب",
+      forgotPasswordHeroTitle: "أعد تعيين كلمة المرور بأمان.",
+      forgotPasswordHeroDescription:
+        "أدخل بريد حسابك وسنرسل لك رابط إعادة التعيين. أثناء التطوير، سيظهر الرابط في التيرمنال لأن SMTP غير مفعّل بعد.",
+      forgotPasswordTitle: "نسيت كلمة المرور؟",
+      forgotPasswordDescription:
+        "أدخل بريدك الإلكتروني وتحقق من صندوق الوارد للحصول على رابط إعادة التعيين.",
+      sendResetLink: "إرسال رابط إعادة التعيين",
+      sendingResetLink: "جاري إرسال الرابط...",
+      resetRequestSuccess:
+        "إذا كان هناك حساب بهذا البريد، فسيتم إرسال رابط إعادة تعيين كلمة المرور.",
+      resetRequestFailed: "فشل طلب إعادة تعيين كلمة المرور. حاول مرة أخرى.",
+      rememberPassword: "تذكرت كلمة المرور؟",
+      backToLogin: "العودة لتسجيل الدخول",
+      setNewPasswordBadge: "تعيين كلمة مرور جديدة",
+      setNewPasswordHeroTitle: "اختر كلمة مرور جديدة وآمنة.",
+      setNewPasswordHeroDescription:
+        "استخدم 8 أحرف على الأقل. بعد إعادة التعيين، يتم إلغاء الجلسات القديمة من إعدادات المصادقة.",
+      resetPasswordTitle: "إعادة تعيين كلمة المرور",
+      resetPasswordDescription: "أدخل كلمة المرور الجديدة بالأسفل.",
+      newPassword: "كلمة المرور الجديدة",
+      confirmPassword: "تأكيد كلمة المرور",
+      repeatPassword: "أعد كتابة كلمة المرور",
+      resetPassword: "إعادة تعيين كلمة المرور",
+      resettingPassword: "جاري إعادة التعيين...",
+      resetMissingToken: "رابط إعادة التعيين لا يحتوي على الرمز المطلوب.",
+      resetPasswordTooShort: "يجب أن تكون كلمة المرور 8 أحرف على الأقل.",
+      passwordsDoNotMatch: "كلمتا المرور غير متطابقتين.",
+      resetPasswordFailed: "فشل إعادة تعيين كلمة المرور.",
+      resetPasswordSuccess:
+        "تمت إعادة تعيين كلمة المرور بنجاح. سيتم تحويلك لتسجيل الدخول...",
+      invalidResetLink:
+        "رابط إعادة التعيين غير صالح أو منتهي الصلاحية. اطلب رابطاً جديداً.",
+      requestNewResetLink: "طلب رابط جديد",
+      loadingResetForm: "جاري تحميل نموذج إعادة التعيين...",
     },
     account: {
       badge: "الحساب",
@@ -950,6 +1129,46 @@ export const translations: Record<Language, TranslationDictionary> = {
       adminDashboardDescription: "إدارة المنتجات والطلبات وبيانات المتجر.",
       noEmail: "لا يوجد بريد إلكتروني",
       customer: "عميل",
+      accountSetupRequired: "يجب إكمال إعداد الحساب قبل إتمام الطلب",
+      accountSetupDescription:
+        "يمكنك تصفح المنتجات وإدارة حسابك، لكن إتمام الطلب يحتاج إلى بريد مؤكد ورقم هاتف حتى يتمكن مسؤول المتجر من تأكيد الطلب.",
+      emailVerification: "تأكيد البريد الإلكتروني",
+      verified: "مؤكد",
+      notVerified: "غير مؤكد",
+      phoneNumber: "رقم الهاتف",
+      added: "مضاف",
+      missing: "غير مضاف",
+      updateProfile: "تحديث الملف الشخصي",
+      updateProfileDescription: "أضف أو حدّث رقم هاتفك قبل إتمام الطلب.",
+      sendingVerificationEmail: "جاري إرسال رسالة التحقق...",
+      resendVerificationEmail: "إعادة إرسال رسالة التحقق",
+      failedToSendVerificationEmail: "فشل إرسال رسالة التحقق.",
+      verificationEmailSent:
+        "تم إرسال رسالة التحقق. تحقق من بريدك، أو من التيرمنال أثناء التطوير.",
+      emailStatus: "حالة البريد الإلكتروني",
+      phone: "الهاتف",
+      notAdded: "غير مضاف",
+    },
+    profile: {
+      badge: "الملف الشخصي",
+      title: "تحديث الملف الشخصي",
+      description:
+        "يستخدم مسؤول المتجر رقم هاتفك لتأكيد طلبات الدفع عند الاستلام.",
+      emailStatus: "حالة البريد الإلكتروني",
+      verified: "مؤكد",
+      notVerified: "غير مؤكد",
+      emailChangeHelp:
+        "تغيير البريد الإلكتروني سيضاف لاحقاً لأنه يحتاج إلى خطوة تحقق منفصلة.",
+      name: "الاسم",
+      phoneNumber: "رقم الهاتف",
+      phoneHelp:
+        "رقم الهاتف مطلوب قبل إتمام الطلب. لم يتم تفعيله عبر SMS حالياً.",
+      saveProfile: "حفظ الملف الشخصي",
+      saving: "جاري الحفظ...",
+      backToAccount: "العودة للحساب",
+      failedToUpdate: "فشل تحديث الملف الشخصي.",
+      updatedSuccessfully: "تم تحديث الملف الشخصي بنجاح.",
+      failedToConnect: "فشل الاتصال بالخادم.",
     },
     admin: {
       dashboard: {

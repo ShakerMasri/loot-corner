@@ -15,6 +15,8 @@ export default async function AccountPage() {
         name: session.user.name ?? "",
         email: session.user.email ?? "",
         role: session.user.role ?? "CUSTOMER",
+        emailVerified: session.user.emailVerified,
+        phone: session.user.phone ?? "",
       }}
     />
   );
