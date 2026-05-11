@@ -7,6 +7,7 @@ import {
   adminOrderParamsSchema,
   updateAdminOrderPaymentSchema,
 } from "~/server/validations/admin-order";
+import { rateLimit } from "~/lib/rate-limit";
 
 type RouteContext = {
   params: Promise<{
@@ -40,6 +41,12 @@ export async function PATCH(request: Request, { params }: RouteContext) {
 
   if (!admin.ok) {
     return admin.response;
+  }
+
+  const limited = await rateLimit(request, "adminMutation", admin.user.id);
+
+  if (!limited.ok) {
+    return limited.response;
   }
 
   const { id } = await params;

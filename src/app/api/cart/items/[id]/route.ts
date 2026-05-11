@@ -5,6 +5,7 @@ import {
   cartItemParamsSchema,
   updateCartItemSchema,
 } from "~/server/validations/cart";
+import { rateLimit } from "~/lib/rate-limit";
 
 type CartItemRouteProps = {
   params: Promise<{
@@ -23,6 +24,13 @@ export async function PATCH(request: Request, { params }: CartItemRouteProps) {
   }
 
   const userId = session.user.id;
+
+  const limited = await rateLimit(request, "cartMutation", userId);
+
+  if (!limited.ok) {
+    return limited.response;
+  }
+
   const { id } = await params;
 
   const parsedParams = cartItemParamsSchema.safeParse({ id });
@@ -102,10 +110,7 @@ export async function PATCH(request: Request, { params }: CartItemRouteProps) {
   }
 }
 
-export async function DELETE(
-  _request: Request,
-  { params }: CartItemRouteProps,
-) {
+export async function DELETE(request: Request, { params }: CartItemRouteProps) {
   const session = await auth();
 
   if (!session?.user?.id) {
@@ -116,6 +121,13 @@ export async function DELETE(
   }
 
   const userId = session.user.id;
+
+  const limited = await rateLimit(request, "cartMutation", userId);
+
+  if (!limited.ok) {
+    return limited.response;
+  }
+
   const { id } = await params;
 
   const parsedParams = cartItemParamsSchema.safeParse({ id });

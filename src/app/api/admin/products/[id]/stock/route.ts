@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { requireAdmin } from "~/lib/admin";
 import { prisma } from "~/lib/prisma";
+import { rateLimit } from "~/lib/rate-limit";
 
 type StockRouteProps = {
   params: Promise<{
@@ -46,6 +47,12 @@ export async function PATCH(request: Request, { params }: StockRouteProps) {
 
   if (!admin.ok) {
     return admin.response;
+  }
+
+  const limited = await rateLimit(request, "adminMutation", admin.user.id);
+
+  if (!limited.ok) {
+    return limited.response;
   }
 
   const { id } = await params;

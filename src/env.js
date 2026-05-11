@@ -24,9 +24,15 @@ export const env = createEnv({
     SMTP_PASSWORD: z.string().min(1),
     SMTP_FROM_EMAIL: z.string().email(),
     SMTP_FROM_NAME: z.string().min(1),
-    UPSTASH_REDIS_REST_URL: z.string().url().optional(),
+    UPSTASH_REDIS_REST_URL:
+      process.env.NODE_ENV === "production"
+        ? z.string().url()
+        : z.string().url().optional(),
 
-    UPSTASH_REDIS_REST_TOKEN: z.string().min(1).optional(),
+    UPSTASH_REDIS_REST_TOKEN:
+      process.env.NODE_ENV === "production"
+        ? z.string().min(1)
+        : z.string().min(1).optional(),
   },
 
   client: {},

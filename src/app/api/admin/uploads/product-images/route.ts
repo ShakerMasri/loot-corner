@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { Readable } from "node:stream";
 import { requireAdmin } from "~/lib/admin";
 import { cloudinary } from "~/lib/cloudinary";
+import { rateLimit } from "~/lib/rate-limit";
 
 const MAX_FILE_SIZE_BYTES = 2 * 1024 * 1024;
 
@@ -67,6 +68,12 @@ export async function POST(request: Request) {
 
   if (!admin.ok) {
     return admin.response;
+  }
+
+  const limited = await rateLimit(request, "adminUpload", admin.user.id);
+
+  if (!limited.ok) {
+    return limited.response;
   }
 
   const formData = await request.formData().catch(() => null);

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "~/lib/prisma";
 import { auth } from "~/server/auth";
 import { addCartItemSchema } from "~/server/validations/cart";
+import { rateLimit } from "~/lib/rate-limit";
 
 export async function POST(request: Request) {
   const session = await auth();
@@ -14,6 +15,12 @@ export async function POST(request: Request) {
   }
 
   const userId = session.user.id;
+
+  const limited = await rateLimit(request, "cartMutation", userId);
+
+  if (!limited.ok) {
+    return limited.response;
+  }
 
   const body: unknown = await request.json().catch(() => null);
   const parsed = addCartItemSchema.safeParse(body);
