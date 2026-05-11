@@ -1,27 +1,20 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { useAppPreferences } from "~/components/providers/AppPreferencesProvider";
 import { authClient } from "~/lib/auth-client";
 
-type LoginStatus = "idle" | "loading" | "error";
+type RequestStatus = "idle" | "loading" | "success" | "error";
 
-export function LoginForm() {
-  const router = useRouter();
-  const searchParams = useSearchParams();
+export function ForgotPasswordForm() {
   const { t } = useAppPreferences();
 
-  const requestedCallbackUrl = searchParams.get("callbackUrl");
-  const callbackUrl = requestedCallbackUrl?.startsWith("/")
-    ? requestedCallbackUrl
-    : "/products";
-
   const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [status, setStatus] = useState<LoginStatus>("idle");
+  const [status, setStatus] = useState<RequestStatus>("idle");
   const [message, setMessage] = useState("");
+
+  const isSubmitting = status === "loading";
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -29,52 +22,55 @@ export function LoginForm() {
     setStatus("loading");
     setMessage("");
 
-    const { error } = await authClient.signIn.email({
-      email,
-      password,
-    });
+    try {
+      await authClient.requestPasswordReset({
+        email,
+        redirectTo: `${window.location.origin}/reset-password`,
+      });
 
-    if (error) {
+      setStatus("success");
+      setMessage(t.auth.resetRequestSuccess);
+    } catch {
       setStatus("error");
-      setMessage(t.auth.invalidLogin);
-      return;
+      setMessage(t.auth.resetRequestFailed);
     }
-
-    router.push(callbackUrl);
-    router.refresh();
   }
 
-  const isSubmitting = status === "loading";
-
   return (
-    <div className="mx-auto grid min-h-[calc(100vh-180px)] max-w-6xl items-center gap-10 px-4 py-10 lg:grid-cols-[0.9fr_1.1fr]">
+    <main className="mx-auto grid min-h-[calc(100vh-180px)] max-w-6xl items-center gap-10 px-4 py-10 lg:grid-cols-[0.9fr_1.1fr]">
       <section className="hidden lg:block">
         <p className="inline-flex rounded-full border border-orange-200 bg-orange-50 px-3 py-1 text-sm font-semibold text-orange-700 dark:border-orange-900 dark:bg-orange-950 dark:text-orange-300">
-          {t.auth.welcomeBackBadge}
+          {t.auth.forgotPasswordBadge}
         </p>
 
         <h1 className="mt-6 text-5xl font-black tracking-tight text-zinc-950 dark:text-white">
-          {t.auth.loginHeroTitle}
+          {t.auth.forgotPasswordHeroTitle}
         </h1>
 
         <p className="mt-5 max-w-xl text-base leading-7 text-zinc-600 dark:text-zinc-400">
-          {t.auth.loginHeroDescription}
+          {t.auth.forgotPasswordHeroDescription}
         </p>
       </section>
 
       <section className="rounded-3xl border border-zinc-200 bg-white p-5 shadow-sm sm:p-8 dark:border-zinc-800 dark:bg-zinc-900">
         <div>
           <h1 className="text-3xl font-black tracking-tight text-zinc-950 dark:text-white">
-            {t.auth.loginTitle}
+            {t.auth.forgotPasswordTitle}
           </h1>
 
           <p className="mt-2 text-sm leading-6 text-zinc-600 dark:text-zinc-400">
-            {t.auth.loginDescription}
+            {t.auth.forgotPasswordDescription}
           </p>
         </div>
 
         {message && (
-          <div className="mt-5 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm font-medium text-red-700 dark:border-red-900 dark:bg-red-950 dark:text-red-300">
+          <div
+            className={`mt-5 rounded-2xl border p-4 text-sm font-medium ${
+              status === "success"
+                ? "border-green-200 bg-green-50 text-green-700 dark:border-green-900 dark:bg-green-950 dark:text-green-300"
+                : "border-red-200 bg-red-50 text-red-700 dark:border-red-900 dark:bg-red-950 dark:text-red-300"
+            }`}
+          >
             {message}
           </div>
         )}
@@ -100,54 +96,25 @@ export function LoginForm() {
             />
           </div>
 
-          <div>
-            <div className="flex items-center justify-between gap-3">
-              <label
-                htmlFor="password"
-                className="text-sm font-semibold text-zinc-800 dark:text-zinc-100"
-              >
-                {t.auth.password}
-              </label>
-
-              <Link
-                href="/forgot-password"
-                className="text-sm font-semibold text-orange-600 hover:text-orange-700 dark:text-orange-400 dark:hover:text-orange-300"
-              >
-                {t.auth.forgotPassword}
-              </Link>
-            </div>
-
-            <input
-              id="password"
-              type="password"
-              autoComplete="current-password"
-              value={password}
-              onChange={(event) => setPassword(event.target.value)}
-              required
-              className="mt-2 w-full rounded-2xl border border-zinc-300 bg-white px-4 py-3 text-sm text-zinc-950 transition outline-none placeholder:text-zinc-400 focus:border-orange-600 focus:ring-4 focus:ring-orange-100 dark:border-zinc-700 dark:bg-zinc-950 dark:text-white dark:focus:border-orange-400 dark:focus:ring-orange-950"
-              placeholder={t.auth.password}
-            />
-          </div>
-
           <button
             type="submit"
             disabled={isSubmitting}
             className="w-full rounded-full bg-zinc-950 px-5 py-3 text-sm font-semibold text-white transition hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-white dark:text-zinc-950 dark:hover:bg-zinc-200"
           >
-            {isSubmitting ? t.auth.loggingIn : t.auth.login}
+            {isSubmitting ? t.auth.sendingResetLink : t.auth.sendResetLink}
           </button>
         </form>
 
         <p className="mt-6 text-center text-sm text-zinc-600 dark:text-zinc-400">
-          {t.auth.noAccount}{" "}
+          {t.auth.rememberPassword}{" "}
           <Link
-            href="/register"
+            href="/login"
             className="font-semibold text-orange-600 hover:text-orange-700 dark:text-orange-400 dark:hover:text-orange-300"
           >
-            {t.auth.createOne}
+            {t.auth.backToLogin}
           </Link>
         </p>
       </section>
-    </div>
+    </main>
   );
 }

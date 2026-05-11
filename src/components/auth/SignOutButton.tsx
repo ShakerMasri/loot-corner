@@ -1,19 +1,22 @@
 "use client";
 
-import { signOut } from "next-auth/react";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useAppPreferences } from "~/components/providers/AppPreferencesProvider";
+import { authClient } from "~/lib/auth-client";
 
 export function SignOutButton() {
+  const router = useRouter();
   const { t } = useAppPreferences();
   const [isSigningOut, setIsSigningOut] = useState(false);
 
   async function handleSignOut() {
     setIsSigningOut(true);
 
-    await signOut({
-      callbackUrl: "/login",
-    });
+    await authClient.signOut();
+
+    router.push("/login");
+    router.refresh();
   }
 
   return (

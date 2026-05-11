@@ -113,6 +113,30 @@ export async function POST(request: Request) {
 
   try {
     const order = await prisma.$transaction(async (tx) => {
+      const customer = await tx.user.findUnique({
+        where: {
+          id: userId,
+        },
+        select: {
+          name: true,
+          email: true,
+          emailVerified: true,
+          phone: true,
+        },
+      });
+
+      if (!customer) {
+        throw new Error("USER_NOT_FOUND");
+      }
+
+      if (!customer.emailVerified) {
+        throw new Error("EMAIL_NOT_VERIFIED");
+      }
+
+      if (!customer.phone?.trim()) {
+        throw new Error("PHONE_REQUIRED");
+      }
+
       const existingOrder = await tx.order.findUnique({
         where: {
           userId_idempotencyKey: {
@@ -216,6 +240,9 @@ export async function POST(request: Request) {
           totalAmount,
           paymentMethod: "CASH_ON_DELIVERY",
           paymentStatus: "UNPAID",
+          customerNameAtPurchase: customer.name,
+          customerEmailAtPurchase: customer.email,
+          customerPhoneAtPurchase: customer.phone,
           items: {
             create: cartItems.map((item) => ({
               productId: item.productId,
@@ -263,6 +290,27 @@ export async function POST(request: Request) {
       order: serializeOrder(order),
     });
   } catch (error) {
+    if (error instanceof Error && error.message === "USER_NOT_FOUND") {
+      return NextResponse.json(
+        { message: "Your account could not be found." },
+        { status: 401 },
+      );
+    }
+
+    if (error instanceof Error && error.message === "EMAIL_NOT_VERIFIED") {
+      return NextResponse.json(
+        { message: "Please verify your email before placing an order." },
+        { status: 403 },
+      );
+    }
+
+    if (error instanceof Error && error.message === "PHONE_REQUIRED") {
+      return NextResponse.json(
+        { message: "Please add a phone number before placing an order." },
+        { status: 400 },
+      );
+    }
+
     if (error instanceof Error && error.message === "EMPTY_CART") {
       return NextResponse.json(
         { message: "Your cart is empty." },

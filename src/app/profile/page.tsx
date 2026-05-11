@@ -1,12 +1,22 @@
+import { redirect } from "next/navigation";
+import { ProfileForm } from "~/components/account/ProfileForm";
 import { auth } from "~/server/auth";
 
 export default async function ProfilePage() {
   const session = await auth();
 
+  if (!session?.user) {
+    redirect("/login?callbackUrl=/profile");
+  }
+
   return (
-    <main style={{ padding: 40 }}>
-      <h1>Profile</h1>
-      <pre>{JSON.stringify(session, null, 2)}</pre>
-    </main>
+    <ProfileForm
+      user={{
+        name: session.user.name ?? "",
+        email: session.user.email ?? "",
+        emailVerified: Boolean(session.user.emailVerified),
+        phone: session.user.phone ?? "",
+      }}
+    />
   );
 }

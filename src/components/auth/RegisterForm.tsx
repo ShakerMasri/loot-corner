@@ -1,22 +1,18 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useAppPreferences } from "~/components/providers/AppPreferencesProvider";
+import { authClient } from "~/lib/auth-client";
 
 type RegisterStatus = "idle" | "loading" | "success" | "error";
 
-type RegisterResponse = {
-  message?: string;
-};
-
 export function RegisterForm() {
-  const router = useRouter();
   const { t } = useAppPreferences();
 
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
 
   const [status, setStatus] = useState<RegisterStatus>("idle");
@@ -28,37 +24,24 @@ export function RegisterForm() {
     setStatus("loading");
     setMessage("");
 
-    try {
-      const response = await fetch("/api/register", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          name,
-          email,
-          password,
-        }),
-      });
+    const { error } = await authClient.signUp.email({
+      name,
+      email,
+      phone,
+      password,
+      callbackURL: "/login?verified=success",
+    });
 
-      const data = (await response.json()) as RegisterResponse;
-
-      if (!response.ok) {
-        setStatus("error");
-        setMessage(data.message ?? t.auth.failedToRegister);
-        return;
-      }
-
-      setStatus("success");
-      setMessage(t.auth.registerSuccess);
-
-      setTimeout(() => {
-        router.push("/login");
-      }, 800);
-    } catch {
+    if (error) {
       setStatus("error");
-      setMessage(t.auth.failedToConnect);
+      setMessage(error.message ?? t.auth.failedToRegister);
+      return;
     }
+
+    setStatus("success");
+    setMessage(
+      "Account created. Please check your email to verify your account.",
+    );
   }
 
   const isSubmitting = status === "loading";
@@ -141,6 +124,32 @@ export function RegisterForm() {
               className="mt-2 w-full rounded-2xl border border-zinc-300 bg-white px-4 py-3 text-sm text-zinc-950 transition outline-none placeholder:text-zinc-400 focus:border-orange-600 focus:ring-4 focus:ring-orange-100 dark:border-zinc-700 dark:bg-zinc-950 dark:text-white dark:focus:border-orange-400 dark:focus:ring-orange-950"
               placeholder="you@example.com"
             />
+          </div>
+
+          <div>
+            <label
+              htmlFor="phone"
+              className="text-sm font-semibold text-zinc-800 dark:text-zinc-100"
+            >
+              Phone number
+            </label>
+
+            <input
+              id="phone"
+              type="tel"
+              autoComplete="tel"
+              value={phone}
+              onChange={(event) => setPhone(event.target.value)}
+              required
+              minLength={8}
+              maxLength={20}
+              className="mt-2 w-full rounded-2xl border border-zinc-300 bg-white px-4 py-3 text-sm text-zinc-950 transition outline-none placeholder:text-zinc-400 focus:border-orange-600 focus:ring-4 focus:ring-orange-100 dark:border-zinc-700 dark:bg-zinc-950 dark:text-white dark:focus:border-orange-400 dark:focus:ring-orange-950"
+              placeholder="+970599000000"
+            />
+
+            <p className="mt-2 text-xs leading-5 text-zinc-500 dark:text-zinc-400">
+              The admin may use this number to confirm your order.
+            </p>
           </div>
 
           <div>
