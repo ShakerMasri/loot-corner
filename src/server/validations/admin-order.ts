@@ -6,7 +6,7 @@ export const adminOrdersQuerySchema = z.object({
 });
 
 export const adminOrderParamsSchema = z.object({
-  id: z.string().min(1, "Order ID is required."),
+  id: z.string().cuid("Invalid order ID."),
 });
 
 export const updateAdminOrderStatusSchema = z.object({
@@ -16,6 +16,7 @@ export const updateAdminOrderStatusSchema = z.object({
 export const updateAdminOrderPaymentSchema = z.object({
   paymentStatus: z.literal(PaymentStatus.PAID),
 });
+
 export const updateAdminOrderNoteSchema = z.object({
   adminNote: z.string().trim().max(1000, "Admin note is too long.").nullable(),
 });
