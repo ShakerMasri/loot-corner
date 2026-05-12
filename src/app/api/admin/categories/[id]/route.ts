@@ -18,6 +18,17 @@ const paramsSchema = z.object({
 
 // reuse schema but partial for update
 const updateCategorySchema = createCategorySchema.partial();
+function categoryInUseResponse() {
+  return NextResponse.json(
+    {
+      message: "Cannot delete category.",
+      errors: {
+        _form: ["Category is used by existing products."],
+      },
+    },
+    { status: 400 },
+  );
+}
 
 export async function PATCH(request: Request, { params }: CategoryRouteProps) {
   const admin = await requireAdmin();
@@ -129,15 +140,7 @@ export async function DELETE(request: Request, { params }: CategoryRouteProps) {
     });
 
     if (productCount > 0) {
-      return NextResponse.json(
-        {
-          message: "Cannot delete category.",
-          errors: {
-            _form: ["Category is used by existing products."],
-          },
-        },
-        { status: 400 },
-      );
+      return categoryInUseResponse();
     }
 
     await prisma.category.delete({
@@ -155,6 +158,12 @@ export async function DELETE(request: Request, { params }: CategoryRouteProps) {
       error.code === "P2025"
     ) {
       return NextResponse.json({ message: "Not found." }, { status: 404 });
+    }
+    if (
+      error instanceof Prisma.PrismaClientKnownRequestError &&
+      error.code === "P2003"
+    ) {
+      return categoryInUseResponse();
     }
 
     return NextResponse.json(
