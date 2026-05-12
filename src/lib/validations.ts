@@ -2,6 +2,7 @@ import { z } from "zod";
 
 const slugSchema = z
   .string()
+  .trim()
   .min(2, "Slug must be at least 2 characters")
   .max(100, "Slug must be less than 100 characters")
   .regex(
@@ -9,13 +10,53 @@ const slugSchema = z
     "Slug must use lowercase letters, numbers, and hyphens only",
   );
 
+const priceSchema = z
+  .union([z.string().trim(), z.number()])
+  .refine((value) => String(value).length > 0, "Price is required")
+  .refine(
+    (value) => /^\d+(\.\d{1,2})?$/.test(String(value)),
+    "Price must be a valid amount with up to 2 decimal places",
+  )
+  .transform((value) => Number(value))
+  .refine((value) => value > 0, "Price must be greater than 0")
+  .refine((value) => value <= 99_999_999.99, "Price is too large");
+
+const stockSchema = z.coerce
+  .number()
+  .int("Stock must be a whole number")
+  .min(0, "Stock cannot be negative")
+  .max(100_000, "Stock is too large");
+
+function isCloudinaryImageUrl(value: string) {
+  try {
+    const url = new URL(value);
+
+    return (
+      url.protocol === "https:" &&
+      url.hostname === "res.cloudinary.com" &&
+      url.pathname.includes("/image/upload/")
+    );
+  } catch {
+    return false;
+  }
+}
+
+const productImageUrlSchema = z
+  .string()
+  .url("Image must be a valid URL")
+  .refine(
+    isCloudinaryImageUrl,
+    "Image must be an uploaded Cloudinary image URL",
+  );
+
 export const registerSchema = z.object({
   name: z
     .string()
+    .trim()
     .min(2, "Name must be at least 2 characters")
     .max(50, "Name must be less than 50 characters"),
 
-  email: z.string().email("Invalid email address").toLowerCase(),
+  email: z.string().trim().email("Invalid email address").toLowerCase(),
 
   password: z
     .string()
@@ -24,10 +65,11 @@ export const registerSchema = z.object({
 });
 
 export const loginSchema = z.object({
-  email: z.string().email("Invalid email address").toLowerCase(),
+  email: z.string().trim().email("Invalid email address").toLowerCase(),
 
   password: z.string().min(1, "Password is required"),
 });
+
 const phoneSchema = z
   .string()
   .trim()
@@ -52,6 +94,7 @@ export const updateProfileSchema = z.object({
 export const categorySchema = z.object({
   name: z
     .string()
+    .trim()
     .min(2, "Category name must be at least 2 characters")
     .max(50, "Category name must be less than 50 characters"),
 
@@ -61,6 +104,7 @@ export const categorySchema = z.object({
 export const createProductSchema = z.object({
   name: z
     .string()
+    .trim()
     .min(2, "Product name must be at least 2 characters")
     .max(100, "Product name must be less than 100 characters"),
 
@@ -68,18 +112,19 @@ export const createProductSchema = z.object({
 
   description: z
     .string()
+    .trim()
     .max(1000, "Description must be less than 1000 characters")
     .optional()
     .nullable(),
 
-  price: z.coerce.number().positive("Price must be greater than 0"),
+  price: priceSchema,
 
-  stock: z.coerce
-    .number()
-    .int("Stock must be a whole number")
-    .min(0, "Stock cannot be negative"),
+  stock: stockSchema,
 
-  images: z.array(z.string().url("Image must be a valid URL")).default([]),
+  images: z
+    .array(productImageUrlSchema)
+    .max(8, "You can upload up to 8 images")
+    .default([]),
 
   isArchived: z.boolean().default(false),
 
@@ -91,15 +136,13 @@ export const createProductSchema = z.object({
 export const createCategorySchema = z.object({
   name: z
     .string()
+    .trim()
     .min(2, "Name must be at least 2 characters long.")
     .max(100, "Name is too long."),
 
-  slug: z
-    .string()
-    .min(2, "Slug must be at least 2 characters long.")
-    .max(100, "Slug is too long.")
-    .regex(/^[a-z0-9-]+$/, "Slug must be lowercase and use hyphens only."),
+  slug: slugSchema,
 });
+
 export const updateProductSchema = createProductSchema
   .omit({
     isArchived: true,
