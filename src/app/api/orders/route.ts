@@ -339,6 +339,46 @@ export async function POST(request: Request) {
       );
     }
 
+    if (
+      error instanceof Prisma.PrismaClientKnownRequestError &&
+      error.code === "P2002"
+    ) {
+      const existingOrder = await prisma.order.findUnique({
+        where: {
+          userId_idempotencyKey: {
+            userId,
+            idempotencyKey,
+          },
+        },
+        select: {
+          id: true,
+          status: true,
+          paymentMethod: true,
+          paymentStatus: true,
+          totalAmount: true,
+          createdAt: true,
+          items: {
+            select: {
+              id: true,
+              quantity: true,
+              priceAtPurchase: true,
+              subtotalAmount: true,
+              productNameAtPurchase: true,
+              productSlugAtPurchase: true,
+              productImagesAtPurchase: true,
+            },
+          },
+        },
+      });
+
+      if (existingOrder) {
+        return NextResponse.json({
+          message: "Order placed successfully.",
+          order: serializeOrder(existingOrder),
+        });
+      }
+    }
+
     return NextResponse.json(
       { message: "Failed to place order." },
       { status: 500 },

@@ -1,8 +1,9 @@
+import { Prisma } from "@prisma/client";
 import { NextResponse } from "next/server";
 import { prisma } from "~/lib/prisma";
+import { rateLimit } from "~/lib/rate-limit";
 import { updateProfileSchema } from "~/lib/validations";
 import { auth } from "~/server/auth";
-import { rateLimit } from "~/lib/rate-limit";
 
 export async function PATCH(request: Request) {
   const session = await auth();
@@ -14,7 +15,9 @@ export async function PATCH(request: Request) {
     );
   }
 
-  const limited = await rateLimit(request, "profileUpdate", session.user.id);
+  const userId = session.user.id;
+
+  const limited = await rateLimit(request, "profileUpdate", userId);
 
   if (!limited.ok) {
     return limited.response;
@@ -38,7 +41,7 @@ export async function PATCH(request: Request) {
   try {
     const user = await prisma.user.update({
       where: {
-        id: session.user.id,
+        id: userId,
       },
       data: {
         name,
@@ -58,7 +61,17 @@ export async function PATCH(request: Request) {
       message: "Profile updated successfully.",
       user,
     });
-  } catch {
+  } catch (error) {
+    if (
+      error instanceof Prisma.PrismaClientKnownRequestError &&
+      error.code === "P2025"
+    ) {
+      return NextResponse.json(
+        { message: "Your account could not be found." },
+        { status: 401 },
+      );
+    }
+
     return NextResponse.json(
       { message: "Failed to update profile." },
       { status: 500 },

@@ -1,17 +1,49 @@
+import type { Prisma } from "@prisma/client";
 import { NextResponse } from "next/server";
 import { prisma } from "~/lib/prisma";
+import { rateLimit } from "~/lib/rate-limit";
 import { auth } from "~/server/auth";
 import {
   cartItemParamsSchema,
   updateCartItemSchema,
 } from "~/server/validations/cart";
-import { rateLimit } from "~/lib/rate-limit";
 
 type CartItemRouteProps = {
   params: Promise<{
     id: string;
   }>;
 };
+
+const cartItemSelect = {
+  id: true,
+  productId: true,
+  quantity: true,
+} satisfies Prisma.CartItemSelect;
+
+function cartItemErrorResponse(error: unknown) {
+  if (error instanceof Error && error.message === "CART_ITEM_NOT_FOUND") {
+    return NextResponse.json(
+      { message: "Cart item not found." },
+      { status: 404 },
+    );
+  }
+
+  if (error instanceof Error && error.message === "PRODUCT_NOT_AVAILABLE") {
+    return NextResponse.json(
+      { message: "This product is no longer available." },
+      { status: 400 },
+    );
+  }
+
+  if (error instanceof Error && error.message === "INSUFFICIENT_STOCK") {
+    return NextResponse.json(
+      { message: "Not enough stock available." },
+      { status: 400 },
+    );
+  }
+
+  return null;
+}
 
 export async function PATCH(request: Request, { params }: CartItemRouteProps) {
   const session = await auth();
@@ -52,57 +84,75 @@ export async function PATCH(request: Request, { params }: CartItemRouteProps) {
   const { quantity } = parsedBody.data;
 
   try {
-    const existingCartItem = await prisma.cartItem.findFirst({
-      where: {
-        id: parsedParams.data.id,
-        userId,
-      },
-      select: {
-        id: true,
-        product: {
-          select: {
-            stock: true,
-            isArchived: true,
+    const updatedCartItem = await prisma.$transaction(async (tx) => {
+      const existingCartItem = await tx.cartItem.findFirst({
+        where: {
+          id: parsedParams.data.id,
+          userId,
+        },
+        select: {
+          id: true,
+          product: {
+            select: {
+              stock: true,
+              isArchived: true,
+            },
           },
         },
-      },
-    });
+      });
 
-    if (!existingCartItem) {
-      return NextResponse.json(
-        { message: "Cart item not found." },
-        { status: 404 },
-      );
-    }
+      if (!existingCartItem) {
+        throw new Error("CART_ITEM_NOT_FOUND");
+      }
 
-    if (existingCartItem.product.isArchived) {
-      return NextResponse.json(
-        { message: "This product is no longer available." },
-        { status: 400 },
-      );
-    }
+      if (existingCartItem.product.isArchived) {
+        throw new Error("PRODUCT_NOT_AVAILABLE");
+      }
 
-    if (quantity > existingCartItem.product.stock) {
-      return NextResponse.json(
-        { message: "Not enough stock available." },
-        { status: 400 },
-      );
-    }
+      if (quantity > existingCartItem.product.stock) {
+        throw new Error("INSUFFICIENT_STOCK");
+      }
 
-    const updatedCartItem = await prisma.cartItem.update({
-      where: {
-        id: existingCartItem.id,
-      },
-      data: {
-        quantity,
-      },
+      const updateResult = await tx.cartItem.updateMany({
+        where: {
+          id: existingCartItem.id,
+          userId,
+        },
+        data: {
+          quantity,
+        },
+      });
+
+      if (updateResult.count !== 1) {
+        throw new Error("CART_ITEM_NOT_FOUND");
+      }
+
+      const cartItem = await tx.cartItem.findFirst({
+        where: {
+          id: existingCartItem.id,
+          userId,
+        },
+        select: cartItemSelect,
+      });
+
+      if (!cartItem) {
+        throw new Error("CART_ITEM_NOT_FOUND");
+      }
+
+      return cartItem;
     });
 
     return NextResponse.json({
       message: "Cart item updated.",
       cartItem: updatedCartItem,
     });
-  } catch {
+  } catch (error) {
+    const response = cartItemErrorResponse(error);
+
+    if (response) {
+      return response;
+    }
+
     return NextResponse.json(
       { message: "Failed to update cart item." },
       { status: 500 },
