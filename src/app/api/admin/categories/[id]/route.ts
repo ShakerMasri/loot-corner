@@ -5,6 +5,7 @@ import { requireAdmin } from "~/lib/admin";
 import { prisma } from "~/lib/prisma";
 import { createCategorySchema } from "~/lib/validations";
 import { rateLimit } from "~/lib/rate-limit";
+import { validateSameOriginRequest } from "~/lib/csrf";
 
 type CategoryRouteProps = {
   params: Promise<{
@@ -33,7 +34,11 @@ function categoryInUseResponse() {
 export async function PATCH(request: Request, { params }: CategoryRouteProps) {
   const admin = await requireAdmin();
   if (!admin.ok) return admin.response;
+  const csrfResponse = validateSameOriginRequest(request);
 
+  if (csrfResponse) {
+    return csrfResponse;
+  }
   const limited = await rateLimit(request, "adminMutation", admin.user.id);
 
   if (!limited.ok) {
@@ -117,7 +122,11 @@ export async function PATCH(request: Request, { params }: CategoryRouteProps) {
 export async function DELETE(request: Request, { params }: CategoryRouteProps) {
   const admin = await requireAdmin();
   if (!admin.ok) return admin.response;
+  const csrfResponse = validateSameOriginRequest(request);
 
+  if (csrfResponse) {
+    return csrfResponse;
+  }
   const limited = await rateLimit(request, "adminMutation", admin.user.id);
 
   if (!limited.ok) {

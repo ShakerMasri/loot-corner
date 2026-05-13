@@ -1,9 +1,10 @@
 import { Prisma } from "@prisma/client";
 import { NextResponse } from "next/server";
+import { validateSameOriginRequest } from "~/lib/csrf";
 import { prisma } from "~/lib/prisma";
+import { rateLimit } from "~/lib/rate-limit";
 import { auth } from "~/server/auth";
 import { createOrderSchema } from "~/server/validations/order";
-import { rateLimit } from "~/lib/rate-limit";
 
 type OrderWithItems = {
   id: string;
@@ -96,6 +97,12 @@ export async function POST(request: Request) {
       { message: "You must be logged in to place an order." },
       { status: 401 },
     );
+  }
+
+  const csrfResponse = validateSameOriginRequest(request);
+
+  if (csrfResponse) {
+    return csrfResponse;
   }
 
   const userId = session.user.id;

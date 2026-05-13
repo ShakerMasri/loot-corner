@@ -5,6 +5,7 @@ import { requireAdmin } from "~/lib/admin";
 import { prisma } from "~/lib/prisma";
 import { updateProductSchema } from "~/lib/validations";
 import { rateLimit } from "~/lib/rate-limit";
+import { validateSameOriginRequest } from "~/lib/csrf";
 
 type ProductRouteProps = {
   params: Promise<{
@@ -92,6 +93,12 @@ export async function PATCH(request: Request, { params }: ProductRouteProps) {
 
   if (!admin.ok) {
     return admin.response;
+  }
+
+  const csrfResponse = validateSameOriginRequest(request);
+
+  if (csrfResponse) {
+    return csrfResponse;
   }
 
   const limited = await rateLimit(request, "adminMutation", admin.user.id);
@@ -204,7 +211,11 @@ export async function DELETE(request: Request, { params }: ProductRouteProps) {
   if (!admin.ok) {
     return admin.response;
   }
+  const csrfResponse = validateSameOriginRequest(request);
 
+  if (csrfResponse) {
+    return csrfResponse;
+  }
   const limited = await rateLimit(request, "adminMutation", admin.user.id);
 
   if (!limited.ok) {

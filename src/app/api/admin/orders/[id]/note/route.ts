@@ -7,6 +7,7 @@ import {
   updateAdminOrderNoteSchema,
 } from "~/server/validations/admin-order";
 import { rateLimit } from "~/lib/rate-limit";
+import { validateSameOriginRequest } from "~/lib/csrf";
 
 type RouteContext = {
   params: Promise<{
@@ -36,6 +37,11 @@ export async function PATCH(request: Request, { params }: RouteContext) {
 
   if (!admin.ok) {
     return admin.response;
+  }
+  const csrfResponse = validateSameOriginRequest(request);
+
+  if (csrfResponse) {
+    return csrfResponse;
   }
 
   const limited = await rateLimit(request, "adminMutation", admin.user.id);

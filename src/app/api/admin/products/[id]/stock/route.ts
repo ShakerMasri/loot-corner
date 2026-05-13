@@ -2,6 +2,7 @@ import { Prisma } from "@prisma/client";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { requireAdmin } from "~/lib/admin";
+import { validateSameOriginRequest } from "~/lib/csrf";
 import { prisma } from "~/lib/prisma";
 import { rateLimit } from "~/lib/rate-limit";
 
@@ -47,6 +48,11 @@ export async function PATCH(request: Request, { params }: StockRouteProps) {
 
   if (!admin.ok) {
     return admin.response;
+  }
+  const csrfResponse = validateSameOriginRequest(request);
+
+  if (csrfResponse) {
+    return csrfResponse;
   }
 
   const limited = await rateLimit(request, "adminMutation", admin.user.id);

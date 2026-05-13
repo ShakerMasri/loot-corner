@@ -4,6 +4,7 @@ import { requireAdmin } from "~/lib/admin";
 import { prisma } from "~/lib/prisma";
 import { createProductSchema } from "~/lib/validations";
 import { rateLimit } from "~/lib/rate-limit";
+import { validateSameOriginRequest } from "~/lib/csrf";
 
 function serializeProduct(product: {
   id: string;
@@ -82,7 +83,11 @@ export async function POST(request: Request) {
   if (!admin.ok) {
     return admin.response;
   }
+  const csrfResponse = validateSameOriginRequest(request);
 
+  if (csrfResponse) {
+    return csrfResponse;
+  }
   const limited = await rateLimit(request, "adminMutation", admin.user.id);
 
   if (!limited.ok) {
