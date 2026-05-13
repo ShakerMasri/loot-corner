@@ -21,20 +21,24 @@ next-env.d.ts
 # production
 /build
 
+# generated files
+/generated/
+
 # misc
 .DS_Store
 *.pem
 
-# debug
+# debug logs
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
 # local env files
-# do not commit any .env files to git, except for the .env.example file. https://create.t3.gg/en/usage/env-variables#using-environment-variables
+# Never commit real env files. Only .env.example is allowed.
 .env
-.env*.local
+.env.*
+!.env.example
 
 # vercel
 .vercel
@@ -42,5 +46,6 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 
-# idea files
+# editor / IDE files
 .idea
+.vscode
