@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { Readable } from "node:stream";
 import { requireAdmin } from "~/lib/admin";
 import { cloudinary } from "~/lib/cloudinary";
+import { validateSameOriginRequest } from "~/lib/csrf";
 import { rateLimit } from "~/lib/rate-limit";
 
 export const runtime = "nodejs";
@@ -91,6 +92,11 @@ export async function POST(request: Request) {
 
   if (!admin.ok) {
     return admin.response;
+  }
+  const csrfResponse = validateSameOriginRequest(request);
+
+  if (csrfResponse) {
+    return csrfResponse;
   }
 
   const limited = await rateLimit(request, "adminUpload", admin.user.id);
