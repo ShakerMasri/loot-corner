@@ -1,15 +1,34 @@
 import { createEnv } from "@t3-oss/env-nextjs";
 import { z } from "zod";
 
-const urlSchema =
-  process.env.NODE_ENV === "production"
-    ? z
-        .string()
-        .url()
-        .refine((value) => value.startsWith("https://"), {
-          message: "Production URLs must use https://",
-        })
-    : z.string().url();
+/**
+ * @param {string} value
+ */
+const isLocalUrl = (value) => {
+  try {
+    const url = new URL(value);
+
+    return ["localhost", "127.0.0.1", "::1"].includes(url.hostname);
+  } catch {
+    return false;
+  }
+};
+
+const appUrlSchema = z
+  .string()
+  .url()
+  .refine(
+    (value) => {
+      if (isLocalUrl(value)) {
+        return true;
+      }
+
+      return value.startsWith("https://");
+    },
+    {
+      message: "Public app URLs must use https:// unless they are localhost.",
+    },
+  );
 
 export const env = createEnv({
   server: {
@@ -18,8 +37,8 @@ export const env = createEnv({
         ? z.string().min(32)
         : z.string().min(32).optional(),
 
-    BETTER_AUTH_URL: urlSchema,
-    APP_URL: urlSchema,
+    BETTER_AUTH_URL: appUrlSchema,
+    APP_URL: appUrlSchema,
 
     DATABASE_URL: z.string().url(),
 
