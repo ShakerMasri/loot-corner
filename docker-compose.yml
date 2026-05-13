@@ -1,12 +1,11 @@
-version: "3.8"
 services:
   db:
     image: postgres:15-alpine
-    restart: always
+    restart: unless-stopped
     environment:
-      - POSTGRES_USER=loot-corner
-      - POSTGRES_PASSWORD=itsbeinglooted
-      - POSTGRES_DB=loot-corner
+      POSTGRES_USER: loot_corner
+      POSTGRES_PASSWORD: loot_corner_dev_password
+      POSTGRES_DB: loot_corner
     ports:
       - "5436:5432"
     volumes:
