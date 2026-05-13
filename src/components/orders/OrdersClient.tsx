@@ -71,6 +71,7 @@ export function OrdersClient() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [message, setMessage] = useState("");
+  const [isAuthRequired, setIsAuthRequired] = useState(false);
 
   const totalSpent = useMemo(() => {
     return orders.reduce((sum, order) => {
@@ -109,6 +110,7 @@ export function OrdersClient() {
   async function loadOrders() {
     setIsLoading(true);
     setMessage("");
+    setIsAuthRequired(false);
 
     try {
       const response = await fetch("/api/orders");
@@ -116,10 +118,14 @@ export function OrdersClient() {
 
       if (!response.ok) {
         setOrders([]);
+
+        if (response.status === 401) {
+          setIsAuthRequired(true);
+        }
+
         setMessage(data.message ?? t.orders.failedToLoad);
         return;
       }
-
       setOrders(data.orders ?? []);
     } catch {
       setOrders([]);
@@ -175,13 +181,22 @@ export function OrdersClient() {
           {message}
         </p>
 
-        <button
-          type="button"
-          onClick={() => void loadOrders()}
-          className="mt-6 rounded-full bg-zinc-950 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-zinc-800 dark:bg-white dark:text-zinc-950 dark:hover:bg-zinc-200"
-        >
-          {t.orders.tryAgain}
-        </button>
+        {isAuthRequired ? (
+          <Link
+            href="/login?callbackUrl=/orders"
+            className="mt-6 inline-flex rounded-full bg-zinc-950 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-zinc-800 dark:bg-white dark:text-zinc-950 dark:hover:bg-zinc-200"
+          >
+            Log in
+          </Link>
+        ) : (
+          <button
+            type="button"
+            onClick={() => void loadOrders()}
+            className="mt-6 rounded-full bg-zinc-950 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-zinc-800 dark:bg-white dark:text-zinc-950 dark:hover:bg-zinc-200"
+          >
+            {t.orders.tryAgain}
+          </button>
+        )}
       </section>
     );
   }

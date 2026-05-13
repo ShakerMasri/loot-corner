@@ -66,6 +66,7 @@ export function CartClient() {
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [message, setMessage] = useState("");
+  const [isAuthRequired, setIsAuthRequired] = useState(false);
   const [updatingItemId, setUpdatingItemId] = useState<string | null>(null);
   const [removingItemId, setRemovingItemId] = useState<string | null>(null);
   const checkoutKeyRef = useRef<string | null>(null);
@@ -96,6 +97,7 @@ export function CartClient() {
     async function loadCart() {
       setIsLoading(true);
       setMessage("");
+      setIsAuthRequired(false);
 
       try {
         const response = await fetch("/api/cart");
@@ -103,6 +105,11 @@ export function CartClient() {
 
         if (!response.ok) {
           setCartItems([]);
+
+          if (response.status === 401) {
+            setIsAuthRequired(true);
+          }
+
           setMessage(data.message ?? t.cart.failedToLoad);
           return;
         }
@@ -134,6 +141,10 @@ export function CartClient() {
       const data = (await response.json()) as CartResponse;
 
       if (!response.ok) {
+        if (response.status === 401) {
+          setIsAuthRequired(true);
+        }
+
         setMessage(data.message ?? t.cart.failedToUpdate);
         return;
       }
@@ -158,6 +169,10 @@ export function CartClient() {
       const data = (await response.json()) as CartResponse;
 
       if (!response.ok) {
+        if (response.status === 401) {
+          setIsAuthRequired(true);
+        }
+
         setMessage(data.message ?? t.cart.failedToRemove);
         return;
       }
@@ -199,6 +214,10 @@ export function CartClient() {
       const data = (await response.json()) as CheckoutResponse;
 
       if (!response.ok || !data.order) {
+        if (response.status === 401) {
+          setIsAuthRequired(true);
+        }
+
         setCheckoutStatus("error");
         setMessage(data.message ?? t.cart.failedToPlaceOrder);
         return;
@@ -332,13 +351,22 @@ export function CartClient() {
           {message}
         </p>
 
-        <button
-          type="button"
-          onClick={() => void loadCart()}
-          className="mt-6 rounded-full bg-zinc-950 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-zinc-800 dark:bg-white dark:text-zinc-950 dark:hover:bg-zinc-200"
-        >
-          {t.cart.tryAgain}
-        </button>
+        {isAuthRequired ? (
+          <Link
+            href="/login?callbackUrl=/cart"
+            className="mt-6 inline-flex rounded-full bg-zinc-950 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-zinc-800 dark:bg-white dark:text-zinc-950 dark:hover:bg-zinc-200"
+          >
+            Log in
+          </Link>
+        ) : (
+          <button
+            type="button"
+            onClick={() => void loadCart()}
+            className="mt-6 rounded-full bg-zinc-950 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-zinc-800 dark:bg-white dark:text-zinc-950 dark:hover:bg-zinc-200"
+          >
+            {t.cart.tryAgain}
+          </button>
+        )}
       </div>
     );
   }
