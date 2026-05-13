@@ -1,5 +1,6 @@
 import type { Prisma } from "@prisma/client";
 import { NextResponse } from "next/server";
+import { validateSameOriginRequest } from "~/lib/csrf";
 import { prisma } from "~/lib/prisma";
 import { rateLimit } from "~/lib/rate-limit";
 import { auth } from "~/server/auth";
@@ -53,6 +54,12 @@ export async function PATCH(request: Request, { params }: CartItemRouteProps) {
       { message: "You must be logged in to update your cart." },
       { status: 401 },
     );
+  }
+
+  const csrfResponse = validateSameOriginRequest(request);
+
+  if (csrfResponse) {
+    return csrfResponse;
   }
 
   const userId = session.user.id;
@@ -168,6 +175,12 @@ export async function DELETE(request: Request, { params }: CartItemRouteProps) {
       { message: "You must be logged in to remove cart items." },
       { status: 401 },
     );
+  }
+
+  const csrfResponse = validateSameOriginRequest(request);
+
+  if (csrfResponse) {
+    return csrfResponse;
   }
 
   const userId = session.user.id;

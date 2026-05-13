@@ -1,5 +1,6 @@
 import { Prisma } from "@prisma/client";
 import { NextResponse } from "next/server";
+import { validateSameOriginRequest } from "~/lib/csrf";
 import { prisma } from "~/lib/prisma";
 import { rateLimit } from "~/lib/rate-limit";
 import { updateProfileSchema } from "~/lib/validations";
@@ -13,6 +14,12 @@ export async function PATCH(request: Request) {
       { message: "You must be logged in." },
       { status: 401 },
     );
+  }
+
+  const csrfResponse = validateSameOriginRequest(request);
+
+  if (csrfResponse) {
+    return csrfResponse;
   }
 
   const userId = session.user.id;
