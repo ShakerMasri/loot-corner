@@ -2,6 +2,7 @@ import { z } from "zod";
 
 const slugSchema = z
   .string()
+  .trim()
   .min(2, "Slug must be at least 2 characters.")
   .max(100, "Slug must be less than 100 characters.")
   .regex(
