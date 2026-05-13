@@ -22,11 +22,11 @@ export async function requireAdmin() {
   };
 }
 
-export async function requireAdminPage() {
+export async function requireAdminPage(callbackUrl = "/admin") {
   const session = await auth();
 
   if (!session?.user?.id) {
-    redirect("/login");
+    redirect(`/login?callbackUrl=${encodeURIComponent(callbackUrl)}`);
   }
 
   if (session.user.role !== "ADMIN") {

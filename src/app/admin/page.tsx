@@ -1,17 +1,8 @@
-import { redirect } from "next/navigation";
 import { AdminDashboardClient } from "~/components/admin/AdminDashboardClient";
-import { auth } from "~/server/auth";
+import { requireAdminPage } from "~/lib/admin";
 
 export default async function AdminPage() {
-  const session = await auth();
-
-  if (!session?.user) {
-    redirect("/login?callbackUrl=/admin");
-  }
-
-  if (session.user.role !== "ADMIN") {
-    redirect("/");
-  }
+  await requireAdminPage("/admin");
 
   return <AdminDashboardClient />;
 }
