@@ -1,6 +1,16 @@
 import { createEnv } from "@t3-oss/env-nextjs";
 import { z } from "zod";
 
+const urlSchema =
+  process.env.NODE_ENV === "production"
+    ? z
+        .string()
+        .url()
+        .refine((value) => value.startsWith("https://"), {
+          message: "Production URLs must use https://",
+        })
+    : z.string().url();
+
 export const env = createEnv({
   server: {
     BETTER_AUTH_SECRET:
@@ -8,9 +18,8 @@ export const env = createEnv({
         ? z.string().min(32)
         : z.string().min(32).optional(),
 
-    BETTER_AUTH_URL: z.string().url(),
-
-    APP_URL: z.string().url(),
+    BETTER_AUTH_URL: urlSchema,
+    APP_URL: urlSchema,
 
     DATABASE_URL: z.string().url(),
 
@@ -24,6 +33,7 @@ export const env = createEnv({
     SMTP_PASSWORD: z.string().min(1),
     SMTP_FROM_EMAIL: z.string().email(),
     SMTP_FROM_NAME: z.string().min(1),
+
     UPSTASH_REDIS_REST_URL:
       process.env.NODE_ENV === "production"
         ? z.string().url()
@@ -33,6 +43,14 @@ export const env = createEnv({
       process.env.NODE_ENV === "production"
         ? z.string().min(1)
         : z.string().min(1).optional(),
+
+    CLOUDINARY_CLOUD_NAME: z.string().min(1),
+    CLOUDINARY_API_KEY: z.string().min(1),
+    CLOUDINARY_API_SECRET: z.string().min(1),
+    CLOUDINARY_PRODUCT_FOLDER: z
+      .string()
+      .min(1)
+      .default("loot-corner/products"),
   },
 
   client: {},
@@ -51,8 +69,14 @@ export const env = createEnv({
     SMTP_PASSWORD: process.env.SMTP_PASSWORD,
     SMTP_FROM_EMAIL: process.env.SMTP_FROM_EMAIL,
     SMTP_FROM_NAME: process.env.SMTP_FROM_NAME,
+
     UPSTASH_REDIS_REST_URL: process.env.UPSTASH_REDIS_REST_URL,
     UPSTASH_REDIS_REST_TOKEN: process.env.UPSTASH_REDIS_REST_TOKEN,
+
+    CLOUDINARY_CLOUD_NAME: process.env.CLOUDINARY_CLOUD_NAME,
+    CLOUDINARY_API_KEY: process.env.CLOUDINARY_API_KEY,
+    CLOUDINARY_API_SECRET: process.env.CLOUDINARY_API_SECRET,
+    CLOUDINARY_PRODUCT_FOLDER: process.env.CLOUDINARY_PRODUCT_FOLDER,
   },
 
   skipValidation: !!process.env.SKIP_ENV_VALIDATION,
