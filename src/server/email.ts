@@ -31,10 +31,10 @@ export async function sendAuthEmail({
   text,
   html,
 }: SendAuthEmailInput) {
-  if (isDevelopmentEmailPlaceholder()) {
+  if (env.EMAIL_DELIVERY_MODE === "log" || isDevelopmentEmailPlaceholder()) {
     const url = extractUrlFromText(text);
 
-    console.warn("\n[DEV EMAIL - NOT SENT]");
+    console.warn("\n[EMAIL LOG - NOT SENT]");
     console.warn(`To: ${to}`);
     console.warn(`Subject: ${subject}`);
 
@@ -44,7 +44,7 @@ export async function sendAuthEmail({
       console.warn(text);
     }
 
-    console.warn("[END DEV EMAIL]\n");
+    console.warn("[END EMAIL LOG]\n");
 
     return;
   }
