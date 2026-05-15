@@ -41,6 +41,7 @@ export const env = createEnv({
     APP_URL: appUrlSchema,
 
     DATABASE_URL: z.string().url(),
+    DIRECT_URL: z.string().url().optional(),
 
     NODE_ENV: z
       .enum(["development", "test", "production"])
@@ -52,6 +53,8 @@ export const env = createEnv({
     SMTP_PASSWORD: z.string().min(1),
     SMTP_FROM_EMAIL: z.string().email(),
     SMTP_FROM_NAME: z.string().min(1),
+
+    EMAIL_DELIVERY_MODE: z.enum(["smtp", "log"]).default("smtp"),
 
     UPSTASH_REDIS_REST_URL:
       process.env.NODE_ENV === "production"
@@ -80,6 +83,7 @@ export const env = createEnv({
     APP_URL: process.env.APP_URL,
 
     DATABASE_URL: process.env.DATABASE_URL,
+    DIRECT_URL: process.env.DIRECT_URL,
     NODE_ENV: process.env.NODE_ENV,
 
     SMTP_HOST: process.env.SMTP_HOST,
@@ -88,6 +92,8 @@ export const env = createEnv({
     SMTP_PASSWORD: process.env.SMTP_PASSWORD,
     SMTP_FROM_EMAIL: process.env.SMTP_FROM_EMAIL,
     SMTP_FROM_NAME: process.env.SMTP_FROM_NAME,
+
+    EMAIL_DELIVERY_MODE: process.env.EMAIL_DELIVERY_MODE,
 
     UPSTASH_REDIS_REST_URL: process.env.UPSTASH_REDIS_REST_URL,
     UPSTASH_REDIS_REST_TOKEN: process.env.UPSTASH_REDIS_REST_TOKEN,
