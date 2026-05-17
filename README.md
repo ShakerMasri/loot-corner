@@ -25,6 +25,7 @@ Completed:
 
 - Better Auth migration
 - Rate limiting
+- Dedicated resend verification email rate limiting
 - Security headers
 - Admin/customer authorization audit
 - Product API hardening
@@ -36,6 +37,8 @@ Completed:
 - CSRF / same-origin checks on protected mutation routes
 - Prisma migration-based database workflow
 - Environment validation through `src/env.js`
+- Unit testing setup with Vitest and React Testing Library
+- Unit tests for validation schemas, product APIs, CSRF/same-origin checks, admin authorization, middleware behavior, and rate limiting
 
 Not started yet:
 
@@ -85,6 +88,7 @@ This project follows these rules:
 - Prisma is used for database access instead of unsafe raw SQL.
 - Passwords must never be stored in plain text.
 - Rate limiting should be enabled for auth routes, public APIs, and protected mutation routes.
+- Resend verification email requests must have a stricter backend rate limit, not only a frontend cooldown.
 - CSRF or same-origin checks should protect cookie-based state-changing requests.
 
 ## Requirements
@@ -137,6 +141,11 @@ SMTP_USER=""
 SMTP_PASSWORD=""
 SMTP_FROM_EMAIL=""
 SMTP_FROM_NAME="Loot Corner"
+
+# Email delivery mode
+# Use "log" for local/staging without real SMTP sending.
+# Use "smtp" for production after configuring a real SMTP provider.
+EMAIL_DELIVERY_MODE="log"
 
 # Upstash Redis rate limiting
 UPSTASH_REDIS_REST_URL=""
@@ -227,6 +236,24 @@ Do not use `prisma db push` against production.
 
 ## Useful Scripts
 
+Run unit tests once:
+
+```bash
+npm run test:run
+```
+
+Run unit tests in watch mode:
+
+```bash
+npm run test
+```
+
+Generate test coverage:
+
+```bash
+npm run test:coverage
+```
+
 Start the local development server:
 
 ```bash
@@ -261,6 +288,15 @@ Run linting and type checking:
 
 ```bash
 npm run check
+```
+
+Recommended local pre-merge checks:
+
+```bash
+npm run test:run
+npm run typecheck
+npm run lint
+npm run build
 ```
 
 Run local development migrations:
@@ -300,6 +336,33 @@ DATABASE_URL="postgresql://loot_corner:loot_corner_dev_password@localhost:5436/l
 Do not use the local Docker database for production.
 
 Production should use a hosted PostgreSQL database with a private connection string stored in the deployment provider's secret/environment settings.
+
+## Testing Flow
+
+Recommended testing order:
+
+```txt
+unit tests -> API/integration tests -> E2E smoke tests -> small k6 smoke test
+```
+
+Current unit testing stack:
+
+- Vitest
+- React Testing Library
+- jsdom
+- mocked Prisma / external services where needed
+
+Unit tests should not touch the staging or production database. Database-backed behavior should be tested separately against a dedicated test/staging database.
+
+Do not run heavy load tests against free staging services. For staging, keep k6 testing small, for example 1-3 virtual users for 30-60 seconds.
+
+## Staging Notes
+
+The staging environment may use free plans while testing, such as Render free web service, Neon free Postgres, Upstash free Redis, Cloudinary free plan, and `EMAIL_DELIVERY_MODE="log"`.
+
+Free services are for staging/testing only. Avoid heavy traffic, stress tests, or behavior that could violate provider limits.
+
+Production should use paid/reliable hosting, paid or production-ready database backups, real SMTP configuration, and production secrets separate from staging.
 
 ## Production Deployment Flow
 
@@ -389,6 +452,17 @@ Important production rules:
 - [ ] Admin orders page works for admins.
 - [ ] Non-admin users cannot access admin APIs.
 - [ ] Signed-out users cannot access protected APIs.
+
+### Testing
+
+- [ ] Unit tests pass with `npm run test:run`.
+- [ ] TypeScript passes with `npm run typecheck`.
+- [ ] ESLint passes with `npm run lint`.
+- [ ] Production build passes with `npm run build`.
+- [ ] Manual customer flow is tested on staging.
+- [ ] Manual admin flow is tested on staging.
+- [ ] E2E smoke tests are added before production launch.
+- [ ] k6 smoke test is small and does not violate free-plan limits.
 
 ### Repository
 
@@ -512,6 +586,24 @@ README.md
 package.json
 package-lock.json
 ```
+
+## Email Delivery Notes
+
+For local development and staging, use:
+
+```env
+EMAIL_DELIVERY_MODE="log"
+```
+
+This prevents real emails from being sent while still allowing the app to test email flows safely.
+
+For production, configure a real SMTP provider and use:
+
+```env
+EMAIL_DELIVERY_MODE="smtp"
+```
+
+Do not use personal Gmail SMTP for production client email. Use a real transactional email provider and verify the sending domain.
 
 ## Legal and Licensing Notes
 
