@@ -94,6 +94,21 @@ describe("rateLimit", () => {
     expect(ratelimitConstructor).not.toHaveBeenCalled();
   });
 
+  it("creates a strict verification email limiter", async () => {
+    const { ratelimitConstructor, slidingWindowMock } = await loadRateLimit({
+      UPSTASH_REDIS_REST_URL: "https://example-upstash.com",
+      UPSTASH_REDIS_REST_TOKEN: "test-token",
+    });
+
+    expect(slidingWindowMock).toHaveBeenCalledWith(1, "1 m");
+    expect(ratelimitConstructor).toHaveBeenCalledWith(
+      expect.objectContaining({
+        analytics: true,
+        prefix: "loot-corner:rate-limit:verification-email",
+      }),
+    );
+  });
+
   it("allows requests when Upstash limiter succeeds", async () => {
     const limitMock = vi.fn().mockResolvedValue({
       success: true,
@@ -141,6 +156,34 @@ describe("rateLimit", () => {
 
     expect(result.ok).toBe(true);
     expect(limitMock).toHaveBeenCalledWith("user:admin-1");
+  });
+
+  it("rate limits verification emails by identifier", async () => {
+    const limitMock = vi.fn().mockResolvedValue({
+      success: true,
+      limit: 1,
+      remaining: 0,
+      reset: Date.now() + 60_000,
+    });
+
+    const { rateLimit } = await loadRateLimit(
+      {
+        UPSTASH_REDIS_REST_URL: "https://example-upstash.com",
+        UPSTASH_REDIS_REST_TOKEN: "test-token",
+      },
+      limitMock,
+    );
+
+    const result = await rateLimit(
+      createRequest(),
+      "verificationEmail",
+      "verification-email:test@example.com",
+    );
+
+    expect(result.ok).toBe(true);
+    expect(limitMock).toHaveBeenCalledWith(
+      "user:verification-email:test@example.com",
+    );
   });
 
   it("returns 429 response when limit is exceeded", async () => {
