@@ -7,6 +7,7 @@ import { useAppPreferences } from "~/components/providers/AppPreferencesProvider
 import { authClient } from "~/lib/auth-client";
 
 const RESEND_VERIFICATION_COOLDOWN_SECONDS = 60;
+const RESEND_VERIFICATION_STORAGE_KEY = "loot-corner-verification-cooldown";
 
 type AccountClientProps = {
   user: {
@@ -32,7 +33,33 @@ export function AccountClient({ user }: AccountClientProps) {
   const [resendCooldown, setResendCooldown] = useState(0);
 
   useEffect(() => {
+    const storedCooldownEnd = window.localStorage.getItem(
+      RESEND_VERIFICATION_STORAGE_KEY,
+    );
+
+    if (!storedCooldownEnd) {
+      return;
+    }
+
+    const cooldownEnd = Number(storedCooldownEnd);
+
+    if (!Number.isFinite(cooldownEnd)) {
+      window.localStorage.removeItem(RESEND_VERIFICATION_STORAGE_KEY);
+      return;
+    }
+
+    const remainingSeconds = Math.max(
+      0,
+      Math.ceil((cooldownEnd - Date.now()) / 1000),
+    );
+
+    setResendCooldown(remainingSeconds);
+  }, []);
+
+  useEffect(() => {
     if (resendCooldown <= 0) {
+      window.localStorage.removeItem(RESEND_VERIFICATION_STORAGE_KEY);
+
       return;
     }
 
@@ -51,6 +78,10 @@ export function AccountClient({ user }: AccountClientProps) {
     setIsSendingVerification(true);
     setVerificationMessage("");
     setResendCooldown(RESEND_VERIFICATION_COOLDOWN_SECONDS);
+    window.localStorage.setItem(
+      RESEND_VERIFICATION_STORAGE_KEY,
+      (Date.now() + RESEND_VERIFICATION_COOLDOWN_SECONDS * 1000).toString(),
+    );
 
     try {
       const { error } = await authClient.sendVerificationEmail({
