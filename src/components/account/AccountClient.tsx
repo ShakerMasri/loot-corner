@@ -1,10 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { SignOutButton } from "~/components/auth/SignOutButton";
 import { useAppPreferences } from "~/components/providers/AppPreferencesProvider";
 import { authClient } from "~/lib/auth-client";
+
+const RESEND_VERIFICATION_COOLDOWN_SECONDS = 60;
 
 type AccountClientProps = {
   user: {
@@ -27,26 +29,48 @@ export function AccountClient({ user }: AccountClientProps) {
 
   const [isSendingVerification, setIsSendingVerification] = useState(false);
   const [verificationMessage, setVerificationMessage] = useState("");
+  const [resendCooldown, setResendCooldown] = useState(0);
 
-  async function handleResendVerificationEmail() {
-    setIsSendingVerification(true);
-    setVerificationMessage("");
-
-    const { error } = await authClient.sendVerificationEmail({
-      email: user.email,
-      callbackURL: "/account",
-    });
-
-    setIsSendingVerification(false);
-
-    if (error) {
-      setVerificationMessage(
-        error.message ?? t.account.failedToSendVerificationEmail,
-      );
+  useEffect(() => {
+    if (resendCooldown <= 0) {
       return;
     }
 
-    setVerificationMessage(t.account.verificationEmailSent);
+    const timer = window.setTimeout(() => {
+      setResendCooldown((currentCooldown) => Math.max(0, currentCooldown - 1));
+    }, 1000);
+
+    return () => window.clearTimeout(timer);
+  }, [resendCooldown]);
+
+  async function handleResendVerificationEmail() {
+    if (isSendingVerification || resendCooldown > 0) {
+      return;
+    }
+
+    setIsSendingVerification(true);
+    setVerificationMessage("");
+    setResendCooldown(RESEND_VERIFICATION_COOLDOWN_SECONDS);
+
+    try {
+      const { error } = await authClient.sendVerificationEmail({
+        email: user.email,
+        callbackURL: "/account",
+      });
+
+      if (error) {
+        setVerificationMessage(
+          error.message ?? t.account.failedToSendVerificationEmail,
+        );
+        return;
+      }
+
+      setVerificationMessage(t.account.verificationEmailSent);
+    } catch {
+      setVerificationMessage(t.account.failedToSendVerificationEmail);
+    } finally {
+      setIsSendingVerification(false);
+    }
   }
 
   return (
@@ -118,12 +142,14 @@ export function AccountClient({ user }: AccountClientProps) {
                 <button
                   type="button"
                   onClick={() => void handleResendVerificationEmail()}
-                  disabled={isSendingVerification}
+                  disabled={isSendingVerification || resendCooldown > 0}
                   className="rounded-full border border-orange-300 bg-white px-4 py-2 text-sm font-semibold text-orange-700 transition hover:bg-orange-100 disabled:cursor-not-allowed disabled:opacity-60 dark:border-orange-800 dark:bg-orange-950 dark:text-orange-200 dark:hover:bg-orange-900"
                 >
                   {isSendingVerification
                     ? t.account.sendingVerificationEmail
-                    : t.account.resendVerificationEmail}
+                    : resendCooldown > 0
+                      ? `${t.account.resendVerificationEmail} (${resendCooldown}s)`
+                      : t.account.resendVerificationEmail}
                 </button>
 
                 {verificationMessage && (

@@ -7,6 +7,7 @@ import { env } from "~/env";
 
 type RateLimitBucket =
   | "auth"
+  | "verificationEmail"
   | "profileUpdate"
   | "cartMutation"
   | "orderCreate"
@@ -42,6 +43,12 @@ const limiters = redis
         limiter: Ratelimit.slidingWindow(20, "10 m"),
         analytics: true,
         prefix: "loot-corner:rate-limit:auth",
+      }),
+      verificationEmail: new Ratelimit({
+        redis,
+        limiter: Ratelimit.slidingWindow(1, "1 m"),
+        analytics: true,
+        prefix: "loot-corner:rate-limit:verification-email",
       }),
       profileUpdate: new Ratelimit({
         redis,
