@@ -54,7 +54,6 @@ if (!isSafeTarget) {
 
 export default defineConfig({
   testDir: "./tests/e2e",
-  testMatch: "**/*.e2e.ts",
 
   fullyParallel: false,
   workers: 1,
@@ -81,9 +80,46 @@ export default defineConfig({
 
   projects: [
     {
-      name: "chromium",
+      name: "setup-customer",
+      testMatch: /.*customer-auth\.setup\.ts/,
       use: {
         browserName: "chromium",
+      },
+    },
+    {
+      name: "setup-admin",
+      testMatch: /.*admin-auth\.setup\.ts/,
+      use: {
+        browserName: "chromium",
+      },
+    },
+    {
+      name: "public",
+      testMatch: [
+        "**/smoke.e2e.ts",
+        "**/auth-guards.e2e.ts",
+        "**/customer-login.e2e.ts",
+      ],
+      use: {
+        browserName: "chromium",
+      },
+    },
+    {
+      name: "customer",
+      dependencies: ["setup-customer"],
+      testMatch: ["**/customer-cart.e2e.ts", "**/customer-pages.e2e.ts"],
+      use: {
+        browserName: "chromium",
+        storageState: "tests/e2e/.auth/customer.json",
+      },
+    },
+    {
+      name: "admin",
+      dependencies: ["setup-admin"],
+      testMatch: ["**/admin-access.e2e.ts"],
+      use: {
+        browserName: "chromium",
+        storageState: "tests/e2e/.auth/admin.json",
       },
     },
   ],

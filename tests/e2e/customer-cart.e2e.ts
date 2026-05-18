@@ -1,11 +1,10 @@
 import { expect, test } from "@playwright/test";
-import { getRequiredE2EPath, loginAsCustomer } from "./helpers/auth";
+import { getRequiredE2EPath } from "./helpers/auth";
 import { clearCart } from "./helpers/cart";
 
 test("customer can add a known product to cart", async ({ page }) => {
   const productPath = getRequiredE2EPath("E2E_PRODUCT_PATH");
 
-  await loginAsCustomer(page, productPath);
   await clearCart(page);
   await page.goto(productPath);
 
