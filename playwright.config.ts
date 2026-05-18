@@ -54,6 +54,7 @@ if (!isSafeTarget) {
 
 export default defineConfig({
   testDir: "./tests/e2e",
+  testMatch: "**/*.e2e.ts",
 
   fullyParallel: false,
   workers: 1,
