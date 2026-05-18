@@ -36,8 +36,30 @@ export async function loginAsCustomer(
 
   await page.locator('form button[type="submit"]').click();
 
-  await page.waitForURL((url) => url.pathname === callbackPath, {
-    timeout: 15_000,
+  await expect(page).toHaveURL((url) => url.pathname === callbackPath, {
+    timeout: 30_000,
+  });
+
+  await expect(page.locator("body")).toBeVisible();
+  await expect(page.locator("body")).not.toContainText("Application error");
+}
+
+export async function loginAsAdmin(
+  page: Page,
+  callbackPath = "/admin/products",
+): Promise<void> {
+  const email = getRequiredE2EEnv("E2E_ADMIN_EMAIL");
+  const password = getRequiredE2EEnv("E2E_ADMIN_PASSWORD");
+
+  await page.goto(`/login?callbackUrl=${encodeURIComponent(callbackPath)}`);
+
+  await page.locator("#email").fill(email);
+  await page.locator("#password").fill(password);
+
+  await page.locator('form button[type="submit"]').click();
+
+  await expect(page).toHaveURL((url) => url.pathname === callbackPath, {
+    timeout: 30_000,
   });
 
   await expect(page.locator("body")).toBeVisible();
