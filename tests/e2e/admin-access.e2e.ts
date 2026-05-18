@@ -1,13 +1,23 @@
 import { expect, test } from "@playwright/test";
 import { loginAsAdmin } from "./helpers/auth";
 
-test("admin can log in and access products admin page", async ({ page }) => {
+const adminReadOnlyPages = [
+  "/admin",
+  "/admin/products",
+  "/admin/orders",
+] as const;
+
+test("admin can access read-only admin pages", async ({ page }) => {
   await loginAsAdmin(page, "/admin/products");
 
-  await expect(page).toHaveURL(/\/admin\/products(?:\?.*)?$/);
-  await expect(page.locator("body")).toBeVisible();
+  for (const path of adminReadOnlyPages) {
+    await page.goto(path);
 
-  await expect(page.locator("body")).not.toContainText("Application error");
-  await expect(page.locator("body")).not.toContainText("Unauthorized");
-  await expect(page.locator("body")).not.toContainText("Forbidden");
+    const body = page.locator("body");
+
+    await expect(page).not.toHaveURL(/\/login(?:\?.*)?$/);
+    await expect(body).toBeVisible();
+    await expect(body).not.toContainText("Application error");
+    await expect(body).not.toContainText(/unauthorized|forbidden/i);
+  }
 });
