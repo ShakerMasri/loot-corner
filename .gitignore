@@ -58,3 +58,6 @@ blob-report/
 
 # Playwright auth state
 tests/e2e/.auth/
+
+# Safe smoke-load local config
+.env.smoke.local
