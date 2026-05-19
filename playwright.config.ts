@@ -116,7 +116,7 @@ export default defineConfig({
     {
       name: "admin",
       dependencies: ["setup-admin"],
-      testMatch: ["**/admin-access.e2e.ts"],
+      testMatch: ["**/admin-access.e2e.ts", "**/admin-orders-readonly.e2e.ts"],
       use: {
         browserName: "chromium",
         storageState: "tests/e2e/.auth/admin.json",
