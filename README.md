@@ -18,6 +18,8 @@ This project is being prepared as a real client-ready application, not just a de
 - Nodemailer / SMTP for email verification and password reset emails
 - Docker Compose for local PostgreSQL development
 - ESLint and Prettier
+- Vitest and React Testing Library for unit/component tests
+- Playwright for E2E browser tests
 
 ## Current Production-Hardening Status
 
@@ -39,6 +41,9 @@ Completed:
 - Environment validation through `src/env.js`
 - Unit testing setup with Vitest and React Testing Library
 - Unit tests for validation schemas, product APIs, CSRF/same-origin checks, admin authorization, middleware behavior, and rate limiting
+- Playwright E2E testing setup
+- Staging-safe E2E tests for public pages, customer auth, cart, orders, admin access, and admin orders read-only behavior
+- Playwright auth-state reuse for stable customer/admin E2E tests
 
 Not started yet:
 
@@ -254,6 +259,30 @@ Generate test coverage:
 npm run test:coverage
 ```
 
+Run Playwright E2E tests:
+
+```bash
+npm run test:e2e
+```
+
+Run Playwright E2E tests in headed browser mode:
+
+```bash
+npm run test:e2e:headed
+```
+
+Open Playwright UI mode:
+
+```bash
+npm run test:e2e:ui
+```
+
+Open the last Playwright HTML report:
+
+```bash
+npm run test:e2e:report
+```
+
 Start the local development server:
 
 ```bash
@@ -342,7 +371,7 @@ Production should use a hosted PostgreSQL database with a private connection str
 Recommended testing order:
 
 ```txt
-unit tests -> API/integration tests -> E2E smoke tests -> small k6 smoke test
+unit tests -> manual staging testing -> Playwright E2E tests -> small load/smoke test after tooling/license review
 ```
 
 Current unit testing stack:
@@ -352,9 +381,124 @@ Current unit testing stack:
 - jsdom
 - mocked Prisma / external services where needed
 
-Unit tests should not touch the staging or production database. Database-backed behavior should be tested separately against a dedicated test/staging database.
+Current E2E testing stack:
 
-Do not run heavy load tests against free staging services. For staging, keep k6 testing small, for example 1-3 virtual users for 30-60 seconds.
+- Playwright
+- Chromium-only browser project for now
+- staging-safe base URL
+- one worker to avoid free-plan abuse
+- saved Playwright auth state for customer/admin sessions
+- screenshots, video, and traces only for failures/retries
+
+Unit tests should not touch the staging or production database.
+
+Playwright E2E tests currently run against staging or localhost only. The staging database contains disposable test data only.
+
+Do not run heavy load tests against free staging services. For staging, keep any future load/smoke testing small and safe.
+
+## Playwright E2E Testing
+
+Playwright E2E tests live in:
+
+```txt
+tests/e2e/
+```
+
+Run all E2E tests:
+
+```bash
+npm run test:e2e
+```
+
+Run with a visible browser:
+
+```bash
+npm run test:e2e:headed
+```
+
+Open Playwright UI mode:
+
+```bash
+npm run test:e2e:ui
+```
+
+Open the latest HTML report:
+
+```bash
+npm run test:e2e:report
+```
+
+### Required Local E2E Environment
+
+Create this local-only file:
+
+```txt
+.env.e2e.local
+```
+
+Required values:
+
+```env
+E2E_BASE_URL="https://loot-corner.onrender.com"
+
+E2E_CUSTOMER_EMAIL="test-customer@example.com"
+E2E_CUSTOMER_PASSWORD="local-test-password"
+
+E2E_ADMIN_EMAIL="test-admin@example.com"
+E2E_ADMIN_PASSWORD="local-test-password"
+
+E2E_PRODUCT_PATH="/products/example-product"
+E2E_ORDER_PRODUCT_PATH="/products/example-product-with-stock"
+```
+
+Do not commit `.env.e2e.local`.
+
+### E2E Safety Rules
+
+- Run E2E tests only against staging or localhost.
+- Do not run E2E tests against production.
+- Do not commit Playwright auth state.
+- Do not commit Playwright screenshots, videos, traces, or reports.
+- Keep workers low to avoid abusing free staging services.
+- Avoid image upload tests unless Cloudinary usage and cleanup are controlled.
+- Avoid email inbox automation while `EMAIL_DELIVERY_MODE="log"`.
+- Use dedicated test customer/admin accounts.
+- Use products with enough stock for order tests.
+
+### Playwright Auth State
+
+The E2E suite saves logged-in customer/admin sessions under:
+
+```txt
+tests/e2e/.auth/
+```
+
+If login state becomes stale, delete that folder and rerun:
+
+```bash
+rm -rf tests/e2e/.auth
+npm run test:e2e
+```
+
+On Windows PowerShell:
+
+```powershell
+Remove-Item -Recurse -Force tests/e2e/.auth
+npm run test:e2e
+```
+
+### Current E2E Coverage
+
+Current Playwright coverage includes:
+
+- public homepage/products smoke tests
+- customer login
+- customer cart add/cleanup
+- customer authenticated pages
+- controlled customer order creation
+- guest auth guard behavior
+- admin read-only pages
+- admin orders read-only API/page behavior
 
 ## Staging Notes
 
@@ -461,8 +605,9 @@ Important production rules:
 - [ ] Production build passes with `npm run build`.
 - [ ] Manual customer flow is tested on staging.
 - [ ] Manual admin flow is tested on staging.
-- [ ] E2E smoke tests are added before production launch.
-- [ ] k6 smoke test is small and does not violate free-plan limits.
+- [ ] Playwright E2E tests pass with `npm run test:e2e`.
+- [ ] Playwright auth state and test artifacts are not committed.
+- [ ] Any future load/smoke test is small, staging-safe, and reviewed for licensing/tooling risk before use.
 
 ### Repository
 
@@ -569,9 +714,14 @@ Do not commit:
 .env.production
 .env.staging
 .env.backup
+.env.e2e.local
 node_modules/
 .next/
 generated/
+tests/e2e/.auth/
+test-results/
+playwright-report/
+blob-report/
 ```
 
 Safe to commit:

@@ -1,32 +1,145 @@
-# Unit Testing Guide - Loot Corner
+# Testing Guide - Loot Corner
 
-Your project is now ready for unit testing with **Vitest** + **React Testing Library**.
+Your project uses **Vitest** + **React Testing Library** for unit/component tests and **Playwright** for E2E browser tests.
 
 ## Quick Start
 
 ```bash
-# Run tests once
+# Run unit tests once
 npm run test:run
 
-# Watch mode (re-run on changes)
+# Watch unit tests
 npm test
 
-# Generate coverage report
+# Generate unit test coverage report
 npm run test:coverage
+
+# Run Playwright E2E tests
+npm run test:e2e
 ```
 
 ---
 
-## Test Patterns for Your Project
+## Playwright E2E Testing
 
-### 1. **React Component Tests**
+Playwright E2E tests live in:
 
-Test components in `src/components/**/*.test.tsx`
+```txt
+tests/e2e/
+```
 
-**Example: Form Component**
+Run all E2E tests:
+
+```bash
+npm run test:e2e
+```
+
+Run with a visible browser:
+
+```bash
+npm run test:e2e:headed
+```
+
+Open Playwright UI mode:
+
+```bash
+npm run test:e2e:ui
+```
+
+Open the latest HTML report:
+
+```bash
+npm run test:e2e:report
+```
+
+### Required Local E2E Env File
+
+Create this local-only file:
+
+```txt
+.env.e2e.local
+```
+
+Required values:
+
+```env
+E2E_BASE_URL="https://loot-corner.onrender.com"
+
+E2E_CUSTOMER_EMAIL="test-customer@example.com"
+E2E_CUSTOMER_PASSWORD="local-test-password"
+
+E2E_ADMIN_EMAIL="test-admin@example.com"
+E2E_ADMIN_PASSWORD="local-test-password"
+
+E2E_PRODUCT_PATH="/products/example-product"
+E2E_ORDER_PRODUCT_PATH="/products/example-product-with-stock"
+```
+
+Do not commit `.env.e2e.local`.
+
+### E2E Safety Rules
+
+- Run E2E tests only against staging or localhost.
+- Do not run E2E tests against production.
+- Do not commit Playwright auth state.
+- Do not commit Playwright screenshots, videos, traces, or reports.
+- Keep workers low to avoid abusing free staging services.
+- Avoid image upload tests unless Cloudinary usage and cleanup are controlled.
+- Avoid email inbox automation while `EMAIL_DELIVERY_MODE="log"`.
+- Use dedicated test customer/admin accounts.
+- Use products with enough stock for order tests.
+
+### Playwright Auth State
+
+The E2E suite saves logged-in customer/admin sessions under:
+
+```txt
+tests/e2e/.auth/
+```
+
+If login state becomes stale, delete that folder and rerun:
+
+```bash
+rm -rf tests/e2e/.auth
+npm run test:e2e
+```
+
+On Windows PowerShell:
+
+```powershell
+Remove-Item -Recurse -Force tests/e2e/.auth
+npm run test:e2e
+```
+
+### Current E2E Coverage
+
+Current Playwright coverage includes:
+
+- public homepage/products smoke tests
+- customer login
+- customer cart add/cleanup
+- customer authenticated pages
+- controlled customer order creation
+- guest auth guard behavior
+- admin read-only pages
+- admin orders read-only API/page behavior
+
+---
+
+## Unit and Component Test Patterns
+
+### 1. React Component Tests
+
+Test components in:
+
+```txt
+src/components/**/*.test.tsx
+```
+
+Example:
 
 ```typescript
-import { describe, it, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { LoginForm } from "./LoginForm";
@@ -34,37 +147,35 @@ import { LoginForm } from "./LoginForm";
 describe("LoginForm", () => {
   it("renders email and password inputs", () => {
     render(<LoginForm />);
+
     expect(screen.getByLabelText(/email/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/password/i)).toBeInTheDocument();
   });
 
   it("submits form with valid data", async () => {
     const user = userEvent.setup();
-    render(<LoginForm onSubmit={vi.fn()} />);
+
+    render(<LoginForm />);
 
     await user.type(screen.getByLabelText(/email/i), "test@example.com");
     await user.type(screen.getByLabelText(/password/i), "password123");
     await user.click(screen.getByRole("button", { name: /login/i }));
-
-    // Assert submission was called
-  });
-
-  it("shows validation errors", async () => {
-    render(<LoginForm />);
-    await userEvent.click(screen.getByRole("button", { name: /login/i }));
-    expect(screen.getByText(/email is required/i)).toBeInTheDocument();
   });
 });
 ```
 
-### 2. **Utility Function Tests**
+### 2. Utility Function Tests
 
-Test functions in `src/lib/**/*.test.ts`
+Test functions in:
 
-**Example: Validation**
+```txt
+src/lib/**/*.test.ts
+```
+
+Example:
 
 ```typescript
-import { describe, it, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 import { validateEmail, validatePassword } from "./validations";
 
 describe("Email Validation", () => {
@@ -87,14 +198,20 @@ describe("Password Validation", () => {
 });
 ```
 
-### 3. **API Route Tests**
+### 3. API Route Tests
 
-Test routes in `src/app/api/**/*.test.ts` using Supertest
+Test routes in:
 
-**Example: Products API**
+```txt
+src/app/api/**/*.test.ts
+```
+
+Use mocks and safe test data. Unit/API tests should not touch production or staging data directly.
+
+Example:
 
 ```typescript
-import { describe, it, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 import request from "supertest";
 
 describe("GET /api/products", () => {
@@ -107,51 +224,29 @@ describe("GET /api/products", () => {
     expect(response.body[0]).toHaveProperty("price");
   });
 
-  it("filters by category", async () => {
-    const response = await request(app)
-      .get("/api/products?category=electronics")
-      .expect(200);
-
-    expect(response.body.every((p) => p.category === "electronics")).toBe(true);
-  });
-
-  it("paginates results", async () => {
-    const response = await request(app)
-      .get("/api/products?skip=0&take=10")
-      .expect(200);
-
-    expect(response.body.length).toBeLessThanOrEqual(10);
-  });
-
   it("returns 400 for invalid pagination", async () => {
     await request(app).get("/api/products?skip=-1").expect(400);
   });
 });
 ```
 
-### 4. **Mocking Patterns**
+### 4. Mocking Patterns
 
-**Mock external modules:**
+Mock external modules when unit testing code that depends on auth, database access, email, Cloudinary, Redis, or other external services.
+
+Example:
 
 ```typescript
 import { vi } from "vitest";
 
-// Mock API calls
 vi.mock("~/lib/auth", () => ({
   getSession: vi.fn(() => Promise.resolve({ user: { id: "1" } })),
 }));
-
-// Mock Next.js router
-vi.mock("next/router", () => ({
-  useRouter: () => ({
-    push: vi.fn(),
-    pathname: "/",
-    query: {},
-  }),
-}));
 ```
 
-### 5. **User Interaction Tests**
+### 5. User Interaction Tests
+
+Example:
 
 ```typescript
 import { render, screen } from "@testing-library/react";
@@ -160,6 +255,7 @@ import userEvent from "@testing-library/user-event";
 describe("AddToCartControls", () => {
   it("increments quantity on button click", async () => {
     const user = userEvent.setup();
+
     render(<AddToCartControls productId="1" />);
 
     const increment = screen.getByRole("button", { name: /\+/ });
@@ -174,26 +270,31 @@ describe("AddToCartControls", () => {
 
 ## What to Test
 
-### ✅ **Always Test:**
+### Always Test
 
-- Input validation (emails, numbers, dates)
-- Error states and edge cases
-- User interactions (clicks, form submissions)
-- Critical business logic
-- API responses and error handling
+- Input validation: emails, numbers, dates, ids, slugs.
+- Error states and edge cases.
+- User interactions: clicks, form submissions, cart changes.
+- Critical business logic.
+- API responses and error handling.
+- Authorization boundaries.
+- Customer data scoping.
+- Admin-only behavior.
+- CSRF or same-origin protection for protected mutations.
 
-### ❌ **Don't Over-Test:**
+### Do Not Over-Test
 
-- Implementation details (test behavior, not internals)
-- Third-party library code (they have their own tests)
-- Trivial getters/setters
-- UI only (test functionality instead)
+- Implementation details.
+- Third-party library internals.
+- Trivial getters/setters.
+- Pure styling without behavior.
+- External provider behavior that should be mocked in unit tests.
 
 ---
 
 ## File Organization
 
-```
+```txt
 src/
 ├── components/
 │   ├── LoginForm.tsx
@@ -205,75 +306,144 @@ src/
 │   ├── products/
 │   │   ├── route.ts
 │   │   └── products.test.ts
+
+tests/
+└── e2e/
+    ├── smoke.e2e.ts
+    ├── customer-login.e2e.ts
+    ├── customer-cart.e2e.ts
+    ├── customer-order.e2e.ts
+    ├── customer-pages.e2e.ts
+    ├── admin-access.e2e.ts
+    ├── admin-orders-readonly.e2e.ts
+    ├── auth-guards.e2e.ts
+    ├── setup/
+    └── helpers/
 ```
 
 ---
 
 ## Coverage Report
 
-After running `npm run test:coverage`, open `coverage/index.html` in your browser to see:
+After running:
 
-- Line coverage
-- Branch coverage
-- Function coverage
-- Statement coverage
+```bash
+npm run test:coverage
+```
 
-**Target:** 70%+ coverage for critical paths
+Open:
+
+```txt
+coverage/index.html
+```
+
+Target: 70%+ coverage for critical paths.
+
+Coverage should focus on useful tests, not only hitting a number.
 
 ---
 
 ## Common Assertions
 
 ```typescript
-// Existence
 expect(element).toBeInTheDocument();
 expect(element).toBeVisible();
-
-// Text content
 expect(screen.getByText("Hello")).toBeInTheDocument();
-
-// Form inputs
 expect(input).toHaveValue("test@example.com");
 expect(input).toHaveAttribute("type", "email");
-
-// Classes & styles
-expect(element).toHaveClass("active");
-
-// Numbers
 expect(array).toHaveLength(5);
 expect(value).toBeGreaterThan(10);
-
-// Objects
 expect(obj).toHaveProperty("id");
-expect(obj).toEqual({ id: 1, name: "Test" });
 ```
 
 ---
 
 ## Useful Commands
 
+Run a specific unit test file:
+
 ```bash
-# Run specific test file
 npm run test:run src/lib/validations.test.ts
-
-# Run tests matching pattern
-npm run test:run -- --grep "LoginForm"
-
-# Update snapshots
-npm run test:run -- -u
-
-# Watch mode with UI
-npm test -- --ui
 ```
+
+Run all unit tests once:
+
+```bash
+npm run test:run
+```
+
+Run unit tests in watch mode:
+
+```bash
+npm test
+```
+
+Generate unit coverage:
+
+```bash
+npm run test:coverage
+```
+
+Run all E2E tests:
+
+```bash
+npm run test:e2e
+```
+
+Run E2E tests with browser visible:
+
+```bash
+npm run test:e2e:headed
+```
+
+Open Playwright UI mode:
+
+```bash
+npm run test:e2e:ui
+```
+
+Open Playwright report:
+
+```bash
+npm run test:e2e:report
+```
+
+---
+
+## Recommended Pre-Merge Checks
+
+Before merging a testing or production-hardening branch:
+
+```bash
+npm run check
+npm run test:run
+npm run test:e2e
+```
+
+Before production deployment, also run:
+
+```bash
+npm run build
+```
+
+---
+
+## Testing Safety Rules
+
+- Do not run E2E tests against production.
+- Do not run heavy load tests against free staging services.
+- Do not commit secrets, auth state, screenshots, videos, traces, or reports.
+- Do not use personal customer/admin accounts for E2E tests.
+- Do not automate real inbox checks while email delivery is intentionally set to log mode.
+- Do not add image upload E2E tests unless Cloudinary usage and cleanup are controlled.
+- Keep staging test data disposable and clearly understood as non-production data.
 
 ---
 
 ## Next Steps
 
-1. Write tests for your **validation functions** first (easiest to test)
-2. Add tests for **API routes** (use mocks for database)
-3. Add tests for **React components** (use user interactions)
-4. Aim for **70%+ coverage** on critical features
-5. Run tests in **CI/CD pipeline** before deployment
-
-Happy testing! 🧪
+1. Keep Playwright E2E tests staging-safe.
+2. Keep generated reports and auth state ignored.
+3. Add new E2E coverage only for high-value flows.
+4. Review load-testing tooling and licensing before adding k6 or alternatives.
+5. Run `npm run check`, `npm run test:run`, and `npm run test:e2e` before merging test branches.

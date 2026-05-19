@@ -49,3 +49,12 @@ yarn-error.log*
 # editor / IDE files
 .idea
 .vscode
+
+# Playwright
+.env.e2e.local
+test-results/
+playwright-report/
+blob-report/
+
+# Playwright auth state
+tests/e2e/.auth/
