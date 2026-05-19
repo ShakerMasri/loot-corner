@@ -65,3 +65,7 @@ tests/e2e/.auth/
 # Local audit reports
 reports/license-inventory.json
 reports/license-inventory.md
+
+# Local asset audit files
+asset-files.txt
+asset-refs.txt
