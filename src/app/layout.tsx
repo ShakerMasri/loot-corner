@@ -10,7 +10,7 @@ export const metadata: Metadata = {
   title: "Loot Corner",
   description:
     "A simple ecommerce store for browsing products and placing orders.",
-  icons: [{ rel: "icon", url: "/favicon.ico" }],
+  icons: [{ rel: "icon", url: "/favicon.svg", type: "image/svg+xml" }],
 };
 
 const geist = Geist({

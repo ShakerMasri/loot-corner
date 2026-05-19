@@ -34,9 +34,9 @@ Finding:
 
 Decision:
 
-- Keep it for staging.
-- Before production, either confirm it is project-owned/client-owned or replace it with a new Loot Corner favicon.
-- Do not use a copied logo/favicon from another website unless permission is documented.
+- Replaced the unknown `public/favicon.ico` with a simple original `public/favicon.svg`.
+- The SVG uses basic shapes and text only.
+- No copied logo, icon pack, external image, or embedded font is used.
 
 ### Fonts
 
