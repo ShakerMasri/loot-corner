@@ -107,7 +107,11 @@ export default defineConfig({
     {
       name: "customer",
       dependencies: ["setup-customer"],
-      testMatch: ["**/customer-cart.e2e.ts", "**/customer-pages.e2e.ts"],
+      testMatch: [
+        "**/customer-cart.e2e.ts",
+        "**/customer-pages.e2e.ts",
+        "**/customer-order.e2e.ts",
+      ],
       use: {
         browserName: "chromium",
         storageState: "tests/e2e/.auth/customer.json",
