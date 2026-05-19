@@ -64,7 +64,11 @@ function normalizeLicense(license) {
 }
 
 function classifyLicense(license) {
-  if (!license || !license.trim()) {
+  if (
+    !license ||
+    !license.trim() ||
+    license.trim().toUpperCase() === "UNKNOWN"
+  ) {
     return {
       level: "unknown",
       reason: "No license field found.",
