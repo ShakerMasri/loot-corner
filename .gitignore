@@ -61,3 +61,7 @@ tests/e2e/.auth/
 
 # Safe smoke-load local config
 .env.smoke.local
+
+# Local audit reports
+reports/license-inventory.json
+reports/license-inventory.md
