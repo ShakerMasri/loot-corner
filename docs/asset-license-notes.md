@@ -24,7 +24,7 @@ asset-refs.txt
 
 ### Repository Static Assets
 
-Status: review before production
+Status: resolved
 
 Finding:
 
@@ -40,7 +40,7 @@ Decision:
 
 ### Fonts
 
-Status: review before final commercial delivery
+Status: accepted
 
 Finding:
 
@@ -49,13 +49,14 @@ Finding:
 
 Decision:
 
-- Keep for now.
-- Before final commercial delivery, verify the font license from the official source and keep a note or proof of license.
-- Do not add paid or proprietary fonts unless the client has the right to use them.
+- Geist is licensed under SIL Open Font License 1.1.
+- The app uses it through `next/font/google`.
+- No local modified font files are committed.
+- No replacement needed.
 
 ### Product Images and Cloudinary Media
 
-Status: review before final commercial delivery
+Status: accepted only after production image review
 
 Finding:
 
@@ -65,10 +66,9 @@ Finding:
 
 Decision:
 
-- Treat Cloudinary product images as client/business content.
-- Before production, confirm every real product image is client-owned, supplier-approved, original, or properly licensed.
-- Replace temporary, demo, or test product images before production.
-- Do not use images copied from marketplaces, Google Images, anime/game pages, social media, or other stores unless usage rights are confirmed.
+- Staging/test images are disposable and not production assets.
+- Before production, every real Cloudinary product image must be client-owned, supplier-approved, original, or properly licensed.
+- Unknown-source images must be removed or replaced.
 
 ### Icons, SVGs, and UI Asset Packs
 

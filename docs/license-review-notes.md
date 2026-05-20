@@ -33,7 +33,7 @@ unknown: 1
 
 ### @better-fetch/fetch@1.1.21
 
-Status: documented review
+Status: accepted with upstream MIT evidence
 
 Reason:
 
@@ -44,13 +44,14 @@ Reason:
 
 Decision:
 
-- Keep the package because it is required by `better-auth`.
-- Do not add a local override that hides the unknown license.
-- Keep it visible in generated audit reports until upstream package metadata is fixed.
+- Keep because it is required by `better-auth`.
+- Upstream repository documents MIT license.
+- Installed npm package metadata is missing the license field, so generated reports may still show UNKNOWN until upstream fixes the package.
+- Recheck before production dependency upgrades.
 
 ### sharp / libvips optional packages
 
-Status: review before final commercial delivery
+Status: accepted for hosted deployment
 
 Reason:
 
@@ -59,12 +60,14 @@ Reason:
 
 Decision:
 
-- Keep for now.
-- Do not remove unless a real deployment/legal requirement says to.
+- These packages are optional transitive dependencies.
+- The app does not directly import or modify Sharp/libvips.
+- Keep package license files intact.
+- Reopen review only if distributing Docker images, server binaries, or a packaged production artifact to a client.
 
 ### lightningcss and axe-core
 
-Status: review before final commercial delivery
+Status: accepted
 
 Reason:
 
@@ -74,22 +77,43 @@ Reason:
 
 Decision:
 
-- Keep for now.
-- Document for final review before commercial delivery.
+- `lightningcss` is not a direct application dependency.
+- No project code modifies `lightningcss`.
+- Keep dependency license files intact.
+- No replacement needed.
 
-### argparse and caniuse-lite
+- `axe-core` is a development transitive dependency.
+- It is not application runtime code.
+- No project code modifies `axe-core`.
+- Keep dependency license files intact.
 
-Status: notice
+### argparse
+
+Status: accepted
 
 Reason:
 
 - `argparse` uses Python-2.0.
+
+Decision:
+
+- `argparse` is a development transitive dependency.
+- No project code modifies it.
+- Keep license notices intact.
+- No replacement needed.
+
+### caniuse-lite
+
+Status: accepted with attribution note
+
 - `caniuse-lite` uses CC-BY-4.0.
 
 Decision:
 
-- Keep for now.
-- Review notice and attribution requirements before commercial delivery.
+- `caniuse-lite` is a transitive browser compatibility data package.
+- Keep package license files intact.
+- Include `caniuse-lite — CC-BY-4.0` in third-party/license review notes.
+- No replacement needed.
 
 ## Final Commercial Delivery Reminder
 
