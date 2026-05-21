@@ -1,5 +1,22 @@
 export type Language = "en" | "ar";
 
+export type LegalPageKey =
+  | "terms"
+  | "privacy"
+  | "shipping"
+  | "returns"
+  | "contact";
+
+export type LegalSection = {
+  title: string;
+  paragraphs?: string[];
+  items?: string[];
+  links?: {
+    href: string;
+    label: string;
+  }[];
+};
+
 export type TranslationDictionary = {
   brand: {
     name: string;
@@ -170,6 +187,7 @@ export type TranslationDictionary = {
     passwordPlaceholder: string;
     passwordHelp: string;
     registerSuccess: string;
+    registerVerifyEmailSuccess: string;
     failedToRegister: string;
     failedToConnect: string;
     signOut: string;
@@ -255,6 +273,40 @@ export type TranslationDictionary = {
     failedToUpdate: string;
     updatedSuccessfully: string;
     failedToConnect: string;
+  };
+
+  legal: {
+    common: {
+      policyBadge: string;
+      lastUpdatedLabel: string;
+      lastUpdatedDate: string;
+      usefulLinks: string;
+      footerLinks: {
+        terms: string;
+        privacy: string;
+        shipping: string;
+        returns: string;
+        contact: string;
+      };
+    };
+    notices: {
+      bySigningIn: string;
+      byCreatingAccount: string;
+      byPlacingOrder: string;
+      privacyPolicy: string;
+      termsOfUse: string;
+      shippingPolicy: string;
+      returnsPolicy: string;
+      and: string;
+    };
+    pages: Record<
+      LegalPageKey,
+      {
+        title: string;
+        description: string;
+        sections: LegalSection[];
+      }
+    >;
   };
 
   admin: {
@@ -610,6 +662,8 @@ export const translations: Record<Language, TranslationDictionary> = {
       passwordHelp:
         "Use a strong password. The server must hash it before saving.",
       registerSuccess: "Account created successfully. Redirecting to login...",
+      registerVerifyEmailSuccess:
+        "Account created. Please check your email to verify your account.",
       failedToRegister: "Failed to create account.",
       failedToConnect: "Failed to connect to the server.",
       signOut: "Sign out",
@@ -709,6 +763,248 @@ export const translations: Record<Language, TranslationDictionary> = {
       updatedSuccessfully: "Profile updated successfully.",
       failedToConnect: "Failed to connect to the server.",
     },
+    legal: {
+      common: {
+        policyBadge: "Store policy",
+        lastUpdatedLabel: "Last updated",
+        lastUpdatedDate: "May 22, 2026",
+        usefulLinks: "Useful links",
+        footerLinks: {
+          terms: "Terms",
+          privacy: "Privacy",
+          shipping: "Shipping",
+          returns: "Returns",
+          contact: "Contact",
+        },
+      },
+      notices: {
+        bySigningIn: "By signing in, you agree to our",
+        byCreatingAccount: "By creating an account, you agree to our",
+        byPlacingOrder: "By placing this order, you agree to our",
+        privacyPolicy: "Privacy Policy",
+        termsOfUse: "Terms of Use",
+        shippingPolicy: "Shipping Policy",
+        returnsPolicy: "Returns Policy",
+        and: "and",
+      },
+      pages: {
+        terms: {
+          title: "Terms of Use",
+          description:
+            "These terms explain the basic rules for using Loot Corner, creating an account, and placing cash-on-delivery orders.",
+          sections: [
+            {
+              title: "1. About the store",
+              paragraphs: [
+                "Loot Corner is an online store for physical products including action figures, flags, posters, retro consoles, CDs, keychains, patches, and similar items.",
+              ],
+            },
+            {
+              title: "2. Accounts",
+              paragraphs: [
+                "You may need an account to place orders, view your order history, and manage your profile information.",
+                "You are responsible for keeping your login details safe and for providing accurate account information.",
+              ],
+            },
+            {
+              title: "3. Orders and payment",
+              paragraphs: [
+                "Orders are currently paid by cash on delivery.",
+                "Adding products to the cart does not reserve stock. Stock and prices are checked again when the order is placed.",
+                "The store may contact you using your phone number or email to confirm the order before delivery.",
+              ],
+            },
+            {
+              title: "4. Product information",
+              paragraphs: [
+                "We try to keep product names, prices, images, descriptions, and stock information accurate. However, mistakes may happen.",
+                "If an error is found after an order is placed, the store may contact you to correct, cancel, or update the order.",
+              ],
+            },
+            {
+              title: "5. Cancellations",
+              paragraphs: [
+                "You may request to cancel an order as long as it has not already been sent for delivery.",
+                "Once the order is on its way, cancellation may not be possible.",
+              ],
+            },
+            {
+              title: "6. Website availability",
+              paragraphs: [
+                "The website may sometimes be unavailable because of maintenance, technical issues, internet problems, or third-party service issues.",
+                "The store will try to keep the website working, but uninterrupted access is not guaranteed.",
+              ],
+            },
+            {
+              title: "7. Contact",
+              paragraphs: [
+                "For questions about orders or these terms, contact us by WhatsApp or phone at +972594022010.",
+              ],
+            },
+          ],
+        },
+        privacy: {
+          title: "Privacy Policy",
+          description:
+            "This policy explains what information the store collects, why it is used, and which services may process it.",
+          sections: [
+            {
+              title: "1. Information we collect",
+              paragraphs: [
+                "The website currently collects or stores information such as:",
+              ],
+              items: [
+                "Name, email address, and phone number.",
+                "Account details, email verification status, and order history.",
+                "Cart items, ordered products, quantities, prices, totals, payment method, and payment status.",
+                "Customer name, email, and phone snapshot at the time an order is placed.",
+                "Session information, IP address, and user-agent for login, security, and rate limiting.",
+                "Theme and language preference stored in your browser.",
+              ],
+            },
+            {
+              title: "2. Information not currently collected",
+              paragraphs: [
+                "The website does not currently collect online card payment details, customer-uploaded images, or delivery address fields.",
+                "Important future note: if delivery address, city, or delivery area fields are added later, this Privacy Policy, Shipping Policy, checkout text, and database documentation should be updated.",
+              ],
+            },
+            {
+              title: "3. How we use information",
+              paragraphs: [
+                "We use information to create and manage accounts, process orders, contact customers about orders, show order history, protect the website, prevent abuse, and maintain store operations.",
+              ],
+            },
+            {
+              title: "4. Emails and messages",
+              paragraphs: [
+                "The website may send account-related emails such as verification or password reset emails.",
+                "The store may also send order-related messages.",
+                "Marketing messages should only be sent where the customer has agreed or where the store has a valid permission basis.",
+              ],
+            },
+            {
+              title: "5. Cookies, sessions, and local storage",
+              paragraphs: [
+                "The website uses essential session/authentication data to keep users signed in and protect accounts.",
+                "It may also store theme and language preferences in the browser.",
+                "Security and rate-limiting systems may process IP addresses and request activity.",
+                "The website does not currently use Google Analytics, Meta Pixel, TikTok Pixel, or advertising tracking pixels.",
+              ],
+            },
+            {
+              title: "6. Service providers",
+              paragraphs: [
+                "The website may use third-party services for hosting, database storage, image storage, email delivery, and rate limiting/security storage.",
+                "These may include Render, Neon or another PostgreSQL provider, Cloudinary, Upstash Redis, Brevo or another SMTP email provider, and domain/DNS providers.",
+              ],
+            },
+            {
+              title: "7. Contact",
+              paragraphs: [
+                "To ask about privacy or request help with your account, contact us by WhatsApp or phone at +972594022010.",
+              ],
+            },
+          ],
+        },
+        shipping: {
+          title: "Shipping / Delivery Policy",
+          description:
+            "This policy explains the current delivery areas, estimated timing, and delivery prices.",
+          sections: [
+            {
+              title: "1. Delivery areas",
+              paragraphs: [
+                "The store currently delivers to the West Bank, Jerusalem, 48 lands, West Jerusalem, Ein Rafa, Ein Naqouba, and Abu Ghosh.",
+              ],
+            },
+            {
+              title: "2. Delivery provider",
+              paragraphs: [
+                "Delivery is handled by a third-party shipping company.",
+                "Delivery times may depend on the shipping company, location, weather, traffic, closures, holidays, or other events outside the store’s control.",
+              ],
+            },
+            {
+              title: "3. Estimated delivery time",
+              paragraphs: [
+                "Estimated delivery time is usually 1–2 days after the order is confirmed, unless the store tells you otherwise.",
+              ],
+            },
+            {
+              title: "4. Delivery prices",
+              items: [
+                "West Bank cities: 20 NIS.",
+                "Jerusalem: 30 NIS.",
+                "48 lands: 70 NIS.",
+                "West Jerusalem, Ein Rafa, Ein Naqouba, and Abu Ghosh: 45 NIS.",
+              ],
+            },
+            {
+              title: "5. Delivery address note",
+              paragraphs: [
+                "The website does not currently collect a full delivery address during checkout.",
+                "The store may contact you using your phone number to confirm delivery details before sending the order.",
+              ],
+            },
+          ],
+        },
+        returns: {
+          title: "Returns / Refunds Policy",
+          description:
+            "This policy explains when returns are accepted and how refunds are handled.",
+          sections: [
+            {
+              title: "1. Return rule",
+              paragraphs: [
+                "Returns are accepted only if the product arrives damaged, defective, incorrect, or damaged during delivery.",
+                "The customer must contact the store within 2 days of receiving the order.",
+              ],
+            },
+            {
+              title: "2. Items that cannot be returned",
+              paragraphs: [
+                "Items cannot be returned if they were used, damaged by the customer, or returned without a valid issue.",
+              ],
+            },
+            {
+              title: "3. Return shipping",
+              paragraphs: [
+                "If the return is accepted because of store or shipping-company damage, return shipping will be handled by the store or the shipping company.",
+              ],
+            },
+            {
+              title: "4. Refund method",
+              paragraphs: [
+                "Refunds are handled manually using a method agreed between the customer and the store.",
+              ],
+            },
+            {
+              title: "5. How to request help",
+              paragraphs: [
+                "Contact us by WhatsApp or phone at +972594022010 and include your order details, photos if the product is damaged, and a clear explanation of the issue.",
+              ],
+            },
+          ],
+        },
+        contact: {
+          title: "Contact",
+          description:
+            "Use this page to contact the store about orders, support, returns, or general questions.",
+          sections: [
+            {
+              title: "Contact details",
+              items: [
+                "WhatsApp / Phone: +972594022010.",
+                "Support email: Not available yet.",
+                "Support hours: Support requests are handled as soon as reasonably possible during normal working days.",
+              ],
+            },
+          ],
+        },
+      },
+    },
+
     admin: {
       dashboard: {
         badge: "Admin",
@@ -1073,6 +1369,8 @@ export const translations: Record<Language, TranslationDictionary> = {
       passwordHelp:
         "استخدم كلمة مرور قوية. يجب أن يتم تشفيرها في الخادم قبل الحفظ.",
       registerSuccess: "تم إنشاء الحساب بنجاح. جار التحويل إلى تسجيل الدخول...",
+      registerVerifyEmailSuccess:
+        "تم إنشاء الحساب. يرجى فحص بريدك الإلكتروني لتأكيد الحساب.",
       failedToRegister: "فشل إنشاء الحساب.",
       failedToConnect: "فشل الاتصال بالخادم.",
       signOut: "تسجيل الخروج",
@@ -1170,6 +1468,246 @@ export const translations: Record<Language, TranslationDictionary> = {
       updatedSuccessfully: "تم تحديث الملف الشخصي بنجاح.",
       failedToConnect: "فشل الاتصال بالخادم.",
     },
+    legal: {
+      common: {
+        policyBadge: "سياسة المتجر",
+        lastUpdatedLabel: "آخر تحديث",
+        lastUpdatedDate: "22 مايو 2026",
+        usefulLinks: "روابط مفيدة",
+        footerLinks: {
+          terms: "الشروط",
+          privacy: "الخصوصية",
+          shipping: "التوصيل",
+          returns: "الإرجاع",
+          contact: "التواصل",
+        },
+      },
+      notices: {
+        bySigningIn: "بتسجيل الدخول، أنت توافق على",
+        byCreatingAccount: "بإنشاء حساب، أنت توافق على",
+        byPlacingOrder: "بإنشاء هذا الطلب، أنت توافق على",
+        privacyPolicy: "سياسة الخصوصية",
+        termsOfUse: "شروط الاستخدام",
+        shippingPolicy: "سياسة التوصيل",
+        returnsPolicy: "سياسة الإرجاع",
+        and: "و",
+      },
+      pages: {
+        terms: {
+          title: "شروط الاستخدام",
+          description:
+            "توضح هذه الشروط القواعد الأساسية لاستخدام لوت كورنر، إنشاء الحسابات، وإنشاء طلبات الدفع عند الاستلام.",
+          sections: [
+            {
+              title: "1. عن المتجر",
+              paragraphs: [
+                "لوت كورنر هو متجر إلكتروني لبيع منتجات فعلية مثل المجسمات، الأعلام، البوسترات، أجهزة الألعاب القديمة، الأقراص، علاقات المفاتيح، الباتشات ومنتجات مشابهة.",
+              ],
+            },
+            {
+              title: "2. الحسابات",
+              paragraphs: [
+                "قد تحتاج إلى حساب لإنشاء الطلبات ومتابعة سجل الطلبات وتحديث بياناتك.",
+                "أنت مسؤول عن الحفاظ على سرية بيانات الدخول وتقديم معلومات صحيحة.",
+              ],
+            },
+            {
+              title: "3. الطلبات والدفع",
+              paragraphs: [
+                "يتم الدفع حالياً عند الاستلام.",
+                "إضافة المنتجات إلى السلة لا تعني حجز المخزون، ويتم فحص المخزون والأسعار مرة أخرى عند إنشاء الطلب.",
+                "قد يتواصل المتجر معك عبر رقم الهاتف أو البريد الإلكتروني لتأكيد الطلب قبل التوصيل.",
+              ],
+            },
+            {
+              title: "4. معلومات المنتجات",
+              paragraphs: [
+                "نحاول عرض أسماء المنتجات والأسعار والصور والوصف والمخزون بدقة، لكن قد تحدث أخطاء.",
+                "إذا ظهر خطأ بعد إنشاء الطلب، قد يتواصل المتجر معك لتصحيح الطلب أو إلغائه أو تحديثه.",
+              ],
+            },
+            {
+              title: "5. الإلغاء",
+              paragraphs: [
+                "يمكنك طلب إلغاء الطلب طالما لم يتم إرساله للتوصيل.",
+                "بعد خروج الطلب للتوصيل، قد لا يكون الإلغاء ممكناً.",
+              ],
+            },
+            {
+              title: "6. توفر الموقع",
+              paragraphs: [
+                "قد يتوقف الموقع أحياناً بسبب الصيانة أو مشاكل تقنية أو مشاكل في الإنترنت أو خدمات خارجية.",
+                "يحاول المتجر الحفاظ على عمل الموقع، لكن لا يوجد ضمان بأن يكون الموقع متاحاً بدون انقطاع دائماً.",
+              ],
+            },
+            {
+              title: "7. التواصل",
+              paragraphs: [
+                "للاستفسار عن الطلبات أو هذه الشروط، يمكنك التواصل معنا عبر واتساب أو الهاتف على الرقم +972594022010.",
+              ],
+            },
+          ],
+        },
+        privacy: {
+          title: "سياسة الخصوصية",
+          description:
+            "توضح هذه السياسة البيانات التي يجمعها المتجر، سبب استخدامها، والخدمات التي قد تعالجها.",
+          sections: [
+            {
+              title: "1. البيانات التي نجمعها",
+              paragraphs: ["يجمع الموقع حالياً أو يخزن بيانات مثل:"],
+              items: [
+                "الاسم والبريد الإلكتروني ورقم الهاتف.",
+                "بيانات الحساب، حالة تأكيد البريد الإلكتروني، وسجل الطلبات.",
+                "عناصر السلة، المنتجات المطلوبة، الكميات، الأسعار، المجموع، طريقة الدفع وحالة الدفع.",
+                "نسخة من اسم العميل وبريده الإلكتروني ورقم هاتفه وقت إنشاء الطلب.",
+                "بيانات الجلسة، عنوان IP، ونوع المتصفح لأغراض تسجيل الدخول والأمان والحد من إساءة الاستخدام.",
+                "تفضيل المظهر واللغة المخزن في المتصفح.",
+              ],
+            },
+            {
+              title: "2. بيانات لا نجمعها حالياً",
+              paragraphs: [
+                "لا يجمع الموقع حالياً بيانات بطاقات الدفع الإلكترونية أو صور مرفوعة من العملاء أو حقول عنوان التوصيل.",
+                "ملاحظة مستقبلية مهمة: إذا تمت إضافة حقول عنوان التوصيل أو المدينة أو منطقة التوصيل لاحقاً، يجب تحديث سياسة الخصوصية وسياسة التوصيل ونصوص إنشاء الطلب وتوثيق قاعدة البيانات.",
+              ],
+            },
+            {
+              title: "3. كيف نستخدم البيانات",
+              paragraphs: [
+                "نستخدم البيانات لإنشاء وإدارة الحسابات، معالجة الطلبات، التواصل مع العملاء بخصوص الطلبات، عرض سجل الطلبات، حماية الموقع، منع إساءة الاستخدام، وتشغيل المتجر.",
+              ],
+            },
+            {
+              title: "4. البريد الإلكتروني والرسائل",
+              paragraphs: [
+                "قد يرسل الموقع رسائل متعلقة بالحساب مثل تأكيد البريد الإلكتروني أو إعادة تعيين كلمة المرور.",
+                "قد يرسل المتجر أيضاً رسائل متعلقة بالطلبات.",
+                "يجب إرسال الرسائل التسويقية فقط عند وجود موافقة من العميل أو أساس مناسب لذلك.",
+              ],
+            },
+            {
+              title: "5. ملفات الجلسة والتخزين المحلي",
+              paragraphs: [
+                "يستخدم الموقع بيانات جلسات أساسية لتسجيل الدخول وحماية الحسابات.",
+                "قد يحفظ أيضاً تفضيلات اللغة والمظهر في المتصفح.",
+                "قد تعالج أنظمة الأمان والحد من الطلبات عنوان IP ونشاط الطلبات.",
+                "لا يستخدم الموقع حالياً أدوات تتبع إعلانية مثل Google Analytics أو Meta Pixel أو TikTok Pixel.",
+              ],
+            },
+            {
+              title: "6. مزودو الخدمات",
+              paragraphs: [
+                "قد يستخدم الموقع خدمات خارجية للاستضافة وقاعدة البيانات وتخزين الصور وإرسال البريد الإلكتروني والتخزين الخاص بالأمان والحد من الطلبات.",
+                "قد تشمل هذه الخدمات Render و Neon أو مزود PostgreSQL آخر و Cloudinary و Upstash Redis و Brevo أو مزود SMTP آخر ومزودي النطاقات و DNS.",
+              ],
+            },
+            {
+              title: "7. التواصل",
+              paragraphs: [
+                "للاستفسار عن الخصوصية أو طلب المساعدة بخصوص الحساب، يمكنك التواصل معنا عبر واتساب أو الهاتف على الرقم +972594022010.",
+              ],
+            },
+          ],
+        },
+        shipping: {
+          title: "سياسة التوصيل",
+          description:
+            "توضح هذه السياسة مناطق التوصيل الحالية، المدة المتوقعة، وأسعار التوصيل.",
+          sections: [
+            {
+              title: "1. مناطق التوصيل",
+              paragraphs: [
+                "يوصل المتجر حالياً إلى مدن الضفة، القدس، أراضي 48، القدس الغربية، عين رافا، عين نقوبا، وأبو غوش.",
+              ],
+            },
+            {
+              title: "2. مزود التوصيل",
+              paragraphs: [
+                "يتم التوصيل عن طريق شركة شحن خارجية.",
+                "قد تختلف مدة التوصيل حسب شركة الشحن، المنطقة، الطقس، الحركة، الإغلاقات، العطل أو أمور أخرى خارج سيطرة المتجر.",
+              ],
+            },
+            {
+              title: "3. مدة التوصيل المتوقعة",
+              paragraphs: [
+                "مدة التوصيل المتوقعة عادة من يوم إلى يومين بعد تأكيد الطلب، إلا إذا أخبرك المتجر بغير ذلك.",
+              ],
+            },
+            {
+              title: "4. أسعار التوصيل",
+              items: [
+                "مدن الضفة: 20 شيكل.",
+                "القدس: 30 شيكل.",
+                "أراضي 48: 70 شيكل.",
+                "القدس الغربية، عين رافا، عين نقوبا، وأبو غوش: 45 شيكل.",
+              ],
+            },
+            {
+              title: "5. ملاحظة بخصوص عنوان التوصيل",
+              paragraphs: [
+                "لا يجمع الموقع حالياً عنوان توصيل كامل أثناء إنشاء الطلب.",
+                "قد يتواصل المتجر معك عبر رقم الهاتف لتأكيد تفاصيل التوصيل قبل إرسال الطلب.",
+              ],
+            },
+          ],
+        },
+        returns: {
+          title: "سياسة الإرجاع والاسترداد",
+          description:
+            "توضح هذه السياسة متى يتم قبول الإرجاع وكيف يتم التعامل مع الاسترداد.",
+          sections: [
+            {
+              title: "1. قاعدة الإرجاع",
+              paragraphs: [
+                "يتم قبول الإرجاع فقط إذا وصل المنتج تالفاً أو معيباً أو خاطئاً أو تضرر أثناء التوصيل.",
+                "يجب على العميل التواصل مع المتجر خلال يومين من استلام الطلب.",
+              ],
+            },
+            {
+              title: "2. منتجات لا يمكن إرجاعها",
+              paragraphs: [
+                "لا يمكن إرجاع المنتجات إذا تم استخدامها أو تضررت بسبب العميل أو لم يكن هناك سبب صحيح للإرجاع.",
+              ],
+            },
+            {
+              title: "3. شحن الإرجاع",
+              paragraphs: [
+                "إذا تم قبول الإرجاع بسبب خطأ من المتجر أو تلف من شركة الشحن، يتم التعامل مع تكلفة إرجاع الشحن من قبل المتجر أو شركة الشحن.",
+              ],
+            },
+            {
+              title: "4. طريقة الاسترداد",
+              paragraphs: [
+                "يتم الاسترداد يدوياً بالطريقة التي يتم الاتفاق عليها بين العميل والمتجر.",
+              ],
+            },
+            {
+              title: "5. طريقة طلب المساعدة",
+              paragraphs: [
+                "للتواصل، استخدم واتساب أو الهاتف على الرقم +972594022010 مع إرسال تفاصيل الطلب وصور المنتج إن كان تالفاً وشرح واضح للمشكلة.",
+              ],
+            },
+          ],
+        },
+        contact: {
+          title: "تواصل معنا",
+          description:
+            "استخدم هذه الصفحة للتواصل مع المتجر بخصوص الطلبات، الدعم، الإرجاع، أو الاستفسارات العامة.",
+          sections: [
+            {
+              title: "بيانات التواصل",
+              items: [
+                "واتساب / هاتف: +972594022010.",
+                "البريد الإلكتروني للدعم: غير متوفر حالياً.",
+                "ساعات الدعم: يتم التعامل مع طلبات الدعم في أقرب وقت ممكن خلال أيام العمل العادية.",
+              ],
+            },
+          ],
+        },
+      },
+    },
+
     admin: {
       dashboard: {
         badge: "الإدارة",

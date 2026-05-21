@@ -614,6 +614,38 @@ export function CartClient() {
           </button>
 
           <p className="mt-4 text-xs leading-5 text-zinc-500 dark:text-zinc-400">
+            {t.legal.notices.byPlacingOrder}{" "}
+            <Link
+              href="/terms"
+              className="font-semibold text-orange-600 hover:text-orange-700 dark:text-orange-400 dark:hover:text-orange-300"
+            >
+              {t.legal.notices.termsOfUse}
+            </Link>
+            ,{" "}
+            <Link
+              href="/privacy"
+              className="font-semibold text-orange-600 hover:text-orange-700 dark:text-orange-400 dark:hover:text-orange-300"
+            >
+              {t.legal.notices.privacyPolicy}
+            </Link>
+            ,{" "}
+            <Link
+              href="/shipping"
+              className="font-semibold text-orange-600 hover:text-orange-700 dark:text-orange-400 dark:hover:text-orange-300"
+            >
+              {t.legal.notices.shippingPolicy}
+            </Link>
+            , {t.legal.notices.and}{" "}
+            <Link
+              href="/returns"
+              className="font-semibold text-orange-600 hover:text-orange-700 dark:text-orange-400 dark:hover:text-orange-300"
+            >
+              {t.legal.notices.returnsPolicy}
+            </Link>
+            .
+          </p>
+
+          <p className="mt-3 text-xs leading-5 text-zinc-500 dark:text-zinc-400">
             {t.cart.stockServerNote}
           </p>
 
