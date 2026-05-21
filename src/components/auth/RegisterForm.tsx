@@ -39,9 +39,7 @@ export function RegisterForm() {
     }
 
     setStatus("success");
-    setMessage(
-      "Account created. Please check your email to verify your account.",
-    );
+    setMessage(t.auth.registerVerifyEmailSuccess);
   }
 
   const isSubmitting = status === "loading";
@@ -184,6 +182,24 @@ export function RegisterForm() {
           >
             {isSubmitting ? t.auth.creatingAccount : t.auth.createAccount}
           </button>
+
+          <p className="text-center text-xs leading-5 text-zinc-500 dark:text-zinc-400">
+            {t.legal.notices.byCreatingAccount}{" "}
+            <Link
+              href="/privacy"
+              className="font-semibold text-orange-600 hover:text-orange-700 dark:text-orange-400 dark:hover:text-orange-300"
+            >
+              {t.legal.notices.privacyPolicy}
+            </Link>{" "}
+            {t.legal.notices.and}{" "}
+            <Link
+              href="/terms"
+              className="font-semibold text-orange-600 hover:text-orange-700 dark:text-orange-400 dark:hover:text-orange-300"
+            >
+              {t.legal.notices.termsOfUse}
+            </Link>
+            .
+          </p>
         </form>
 
         <p className="mt-6 text-center text-sm text-zinc-600 dark:text-zinc-400">
