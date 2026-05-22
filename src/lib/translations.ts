@@ -836,7 +836,15 @@ export const translations: Record<Language, TranslationDictionary> = {
               ],
             },
             {
-              title: "7. Contact",
+              title: "7. Changes to this policy",
+              paragraphs: [
+                "We may update this Privacy Policy or other store policies from time to time.",
+                "When we make changes, we will update the “Last updated” date on the relevant page.",
+                "Continued use of the website or placing orders after changes are published means you accept the updated policy.",
+              ],
+            },
+            {
+              title: "8. Contact",
               paragraphs: [
                 "For questions about orders or these terms, contact us by WhatsApp or phone at +972594022010.",
               ],
@@ -1541,7 +1549,15 @@ export const translations: Record<Language, TranslationDictionary> = {
               ],
             },
             {
-              title: "7. التواصل",
+              title: "7. التغييرات على هذه السياسات",
+              paragraphs: [
+                "قد نقوم بتحديث شروط الاستخدام أو سياسة الخصوصية أو سياسة التوصيل أو سياسة الإرجاع أو أي سياسات أخرى للمتجر من وقت لآخر.",
+                "عند إجراء أي تغييرات، سنقوم بتحديث تاريخ آخر تحديث في الصفحة المعنية.",
+                "استمرار استخدام الموقع أو إنشاء الطلبات بعد نشر التغييرات يعني موافقتك على السياسة المحدّثة.",
+              ],
+            },
+            {
+              title: "8. التواصل",
               paragraphs: [
                 "للاستفسار عن الطلبات أو هذه الشروط، يمكنك التواصل معنا عبر واتساب أو الهاتف على الرقم +972594022010.",
               ],
