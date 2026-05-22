@@ -11,6 +11,15 @@ const adminOrderSelect = {
   paymentMethod: true,
   paymentStatus: true,
   adminNote: true,
+  customerNameAtPurchase: true,
+  customerEmailAtPurchase: true,
+  customerPhoneAtPurchase: true,
+  deliveryAreaKey: true,
+  deliveryPrice: true,
+  deliveryCity: true,
+  deliveryAddress: true,
+  deliveryNotes: true,
+  pickupAgreementAccepted: true,
   createdAt: true,
   updatedAt: true,
   user: {
@@ -45,6 +54,7 @@ function serializeAdminOrder(order: AdminOrder) {
   return {
     ...order,
     totalAmount: order.totalAmount.toString(),
+    deliveryPrice: order.deliveryPrice.toString(),
     createdAt: order.createdAt.toISOString(),
     updatedAt: order.updatedAt.toISOString(),
     items: order.items.map((item) => ({

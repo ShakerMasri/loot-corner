@@ -201,6 +201,16 @@ export type TranslationDictionary = {
     quantity: string;
     subtotal: string;
     noImage: string;
+    deliveryDetails: string;
+    deliveryArea: string;
+    deliveryCity: string;
+    deliveryAddress: string;
+    deliveryNotes: string;
+    deliveryPrice: string;
+    pickupAgreement: string;
+    yes: string;
+    notProvided: string;
+    notRequired: string;
     failedToLoad: string;
     failedToConnect: string;
     statuses: Record<string, string>;
@@ -426,6 +436,20 @@ export type TranslationDictionary = {
       orderStatus: string;
       paymentStatus: string;
       items: string;
+      contactDetails: string;
+      customerName: string;
+      customerEmail: string;
+      customerPhone: string;
+      deliveryDetails: string;
+      deliveryArea: string;
+      deliveryCity: string;
+      deliveryAddress: string;
+      deliveryNotes: string;
+      deliveryPrice: string;
+      pickupAgreement: string;
+      yes: string;
+      notProvided: string;
+      notRequired: string;
       adminNote: string;
       adminNotePlaceholder: string;
       saveNote: string;
@@ -756,6 +780,16 @@ export const translations: Record<Language, TranslationDictionary> = {
       quantity: "Quantity",
       subtotal: "Subtotal",
       noImage: "No image",
+      deliveryDetails: "Delivery details",
+      deliveryArea: "Delivery area",
+      deliveryCity: "City or area",
+      deliveryAddress: "Delivery address",
+      deliveryNotes: "Delivery notes",
+      deliveryPrice: "Delivery price",
+      pickupAgreement: "Pickup agreement",
+      yes: "Yes",
+      notProvided: "Not provided",
+      notRequired: "Not required",
       failedToLoad: "Failed to load orders.",
       failedToConnect: "Failed to connect to the server.",
       statuses: {
@@ -1235,6 +1269,20 @@ export const translations: Record<Language, TranslationDictionary> = {
         orderStatus: "Order status",
         paymentStatus: "Payment status",
         items: "Items",
+        contactDetails: "Contact details",
+        customerName: "Customer name",
+        customerEmail: "Customer email",
+        customerPhone: "Customer phone",
+        deliveryDetails: "Delivery details",
+        deliveryArea: "Delivery area",
+        deliveryCity: "City or area",
+        deliveryAddress: "Delivery address",
+        deliveryNotes: "Delivery notes",
+        deliveryPrice: "Delivery price",
+        pickupAgreement: "Pickup agreement",
+        yes: "Yes",
+        notProvided: "Not provided",
+        notRequired: "Not required",
         adminNote: "Admin note",
         adminNotePlaceholder: "Private note for admins only...",
         saveNote: "Save note",
@@ -1571,6 +1619,16 @@ export const translations: Record<Language, TranslationDictionary> = {
       quantity: "الكمية",
       subtotal: "المجموع الفرعي",
       noImage: "لا توجد صورة",
+      deliveryDetails: "تفاصيل التوصيل",
+      deliveryArea: "منطقة التوصيل",
+      deliveryCity: "المدينة أو المنطقة",
+      deliveryAddress: "عنوان التوصيل",
+      deliveryNotes: "ملاحظات التوصيل",
+      deliveryPrice: "سعر التوصيل",
+      pickupAgreement: "موافقة الاستلام",
+      yes: "نعم",
+      notProvided: "غير متوفر",
+      notRequired: "غير مطلوب",
       failedToLoad: "فشل تحميل الطلبات.",
       failedToConnect: "فشل الاتصال بالخادم.",
       statuses: {
@@ -2045,6 +2103,20 @@ export const translations: Record<Language, TranslationDictionary> = {
         orderStatus: "حالة الطلب",
         paymentStatus: "حالة الدفع",
         items: "المنتجات",
+        contactDetails: "بيانات التواصل",
+        customerName: "اسم العميل",
+        customerEmail: "بريد العميل",
+        customerPhone: "هاتف العميل",
+        deliveryDetails: "تفاصيل التوصيل",
+        deliveryArea: "منطقة التوصيل",
+        deliveryCity: "المدينة أو المنطقة",
+        deliveryAddress: "عنوان التوصيل",
+        deliveryNotes: "ملاحظات التوصيل",
+        deliveryPrice: "سعر التوصيل",
+        pickupAgreement: "موافقة الاستلام",
+        yes: "نعم",
+        notProvided: "غير متوفر",
+        notRequired: "غير مطلوب",
         adminNote: "ملاحظة الإدارة",
         adminNotePlaceholder: "ملاحظة خاصة بالإدارة فقط...",
         saveNote: "حفظ الملاحظة",
