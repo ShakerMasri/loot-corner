@@ -12,6 +12,15 @@ const adminCategorySelect = {
   slug: true,
 } satisfies Prisma.CategorySelect;
 
+const adminCategoryListSelect = {
+  ...adminCategorySelect,
+  _count: {
+    select: {
+      products: true,
+    },
+  },
+} satisfies Prisma.CategorySelect;
+
 export async function POST(request: Request) {
   const admin = await requireAdmin();
 
@@ -87,11 +96,7 @@ export async function GET() {
       orderBy: {
         name: "asc",
       },
-      select: {
-        id: true,
-        name: true,
-        slug: true,
-      },
+      select: adminCategoryListSelect,
     });
 
     return NextResponse.json({

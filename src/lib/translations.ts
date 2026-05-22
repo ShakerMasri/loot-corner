@@ -324,6 +324,45 @@ export type TranslationDictionary = {
       categoriesBadge: string;
       categoriesDescription: string;
     };
+    categories: {
+      badge: string;
+      title: string;
+      description: string;
+      backToDashboard: string;
+      createTitle: string;
+      createDescription: string;
+      name: string;
+      namePlaceholder: string;
+      slug: string;
+      slugPlaceholder: string;
+      make: string;
+      createButton: string;
+      creating: string;
+      editTitle: string;
+      editDescription: string;
+      saveButton: string;
+      saving: string;
+      cancel: string;
+      listTitle: string;
+      listDescription: string;
+      refresh: string;
+      noCategoriesYet: string;
+      productCount: string;
+      deleteBlockedHint: string;
+      edit: string;
+      delete: string;
+      deleting: string;
+      deleteConfirm: string;
+      cannotDeleteWithProducts: string;
+      failedToLoad: string;
+      failedToConnect: string;
+      failedToCreate: string;
+      created: string;
+      failedToUpdate: string;
+      updated: string;
+      failedToDelete: string;
+      deleted: string;
+    };
     orders: {
       badge: string;
       title: string;
@@ -1028,9 +1067,54 @@ export const translations: Record<Language, TranslationDictionary> = {
         ordersDescription:
           "Review customer orders, update order status, payment state, and internal notes.",
         categoriesTitle: "Categories",
-        categoriesBadge: "Later",
+        categoriesBadge: "Catalog",
         categoriesDescription:
-          "We can add a category management page after products and orders are polished.",
+          "Create, rename, and safely delete categories when no products are using them.",
+      },
+      categories: {
+        badge: "Admin",
+        title: "Categories",
+        description:
+          "Manage product categories. Deleting is blocked when products are still connected to the category.",
+        backToDashboard: "Back to dashboard",
+        createTitle: "Create category",
+        createDescription:
+          "Add a new category for products. Use a lowercase slug for clean URLs and filters.",
+        name: "Name",
+        namePlaceholder: "Accessories",
+        slug: "Slug",
+        slugPlaceholder: "accessories",
+        make: "Make",
+        createButton: "Create category",
+        creating: "Creating...",
+        editTitle: "Edit category",
+        editDescription:
+          "Changes affect product filters and future browsing. Existing order snapshots are not changed.",
+        saveButton: "Save category",
+        saving: "Saving...",
+        cancel: "Cancel",
+        listTitle: "Category list",
+        listDescription:
+          "Categories with connected products cannot be deleted. Move or archive related products first.",
+        refresh: "Refresh",
+        noCategoriesYet: "No categories yet.",
+        productCount: "{count} connected products",
+        deleteBlockedHint:
+          "Delete is blocked because products are using this category.",
+        edit: "Edit",
+        delete: "Delete",
+        deleting: "Deleting...",
+        deleteConfirm: "Delete this category? This cannot be undone.",
+        cannotDeleteWithProducts:
+          "This category cannot be deleted while products are connected to it.",
+        failedToLoad: "Failed to load categories.",
+        failedToConnect: "Failed to connect to the server.",
+        failedToCreate: "Failed to create category.",
+        created: "Category created successfully.",
+        failedToUpdate: "Failed to update category.",
+        updated: "Category updated successfully.",
+        failedToDelete: "Failed to delete category.",
+        deleted: "Category deleted successfully.",
       },
       orders: {
         badge: "Admin",
@@ -1739,9 +1823,53 @@ export const translations: Record<Language, TranslationDictionary> = {
         ordersDescription:
           "مراجعة طلبات العملاء وتحديث حالة الطلب والدفع والملاحظات الداخلية.",
         categoriesTitle: "التصنيفات",
-        categoriesBadge: "لاحقاً",
+        categoriesBadge: "الكتالوج",
         categoriesDescription:
-          "يمكننا إضافة صفحة إدارة التصنيفات بعد تحسين المنتجات والطلبات.",
+          "إنشاء التصنيفات وتعديلها وحذفها بأمان عندما لا تكون مرتبطة بمنتجات.",
+      },
+      categories: {
+        badge: "الإدارة",
+        title: "التصنيفات",
+        description:
+          "إدارة تصنيفات المنتجات. يتم منع الحذف عندما تكون هناك منتجات مرتبطة بالتصنيف.",
+        backToDashboard: "العودة إلى لوحة الإدارة",
+        createTitle: "إنشاء تصنيف",
+        createDescription:
+          "أضف تصنيفاً جديداً للمنتجات. استخدم رابطاً مختصراً بحروف إنجليزية صغيرة للفلاتر والروابط.",
+        name: "الاسم",
+        namePlaceholder: "إكسسوارات",
+        slug: "الرابط المختصر",
+        slugPlaceholder: "accessories",
+        make: "إنشاء",
+        createButton: "إنشاء التصنيف",
+        creating: "جار الإنشاء...",
+        editTitle: "تعديل التصنيف",
+        editDescription:
+          "التغييرات تؤثر على فلاتر المنتجات والتصفح لاحقاً، ولا تغير لقطات الطلبات السابقة.",
+        saveButton: "حفظ التصنيف",
+        saving: "جار الحفظ...",
+        cancel: "إلغاء",
+        listTitle: "قائمة التصنيفات",
+        listDescription:
+          "لا يمكن حذف التصنيفات المرتبطة بمنتجات. انقل المنتجات أو أرشفها أولاً.",
+        refresh: "تحديث",
+        noCategoriesYet: "لا توجد تصنيفات بعد.",
+        productCount: "{count} منتجات مرتبطة",
+        deleteBlockedHint: "الحذف ممنوع لأن هناك منتجات تستخدم هذا التصنيف.",
+        edit: "تعديل",
+        delete: "حذف",
+        deleting: "جار الحذف...",
+        deleteConfirm: "هل تريد حذف هذا التصنيف؟ لا يمكن التراجع عن ذلك.",
+        cannotDeleteWithProducts:
+          "لا يمكن حذف هذا التصنيف بينما توجد منتجات مرتبطة به.",
+        failedToLoad: "فشل تحميل التصنيفات.",
+        failedToConnect: "فشل الاتصال بالخادم.",
+        failedToCreate: "فشل إنشاء التصنيف.",
+        created: "تم إنشاء التصنيف بنجاح.",
+        failedToUpdate: "فشل تحديث التصنيف.",
+        updated: "تم تحديث التصنيف بنجاح.",
+        failedToDelete: "فشل حذف التصنيف.",
+        deleted: "تم حذف التصنيف بنجاح.",
       },
       orders: {
         badge: "الإدارة",
