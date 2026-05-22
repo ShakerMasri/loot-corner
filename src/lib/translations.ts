@@ -141,6 +141,32 @@ export type TranslationDictionary = {
     failedToPlaceOrder: string;
     decreaseQuantity: string;
     increaseQuantity: string;
+    deliveryDetailsTitle: string;
+    deliveryDetailsDescription: string;
+    deliveryArea: string;
+    deliveryCity: string;
+    deliveryCityPlaceholder: string;
+    deliveryAddress: string;
+    deliveryAddressOptional: string;
+    deliveryAddressPlaceholder: string;
+    deliveryNotes: string;
+    deliveryNotesPlaceholder: string;
+    productsTotal: string;
+    deliveryPrice: string;
+    finalTotal: string;
+    reviewOrder: string;
+    confirmOrderTitle: string;
+    confirmOrderDescription: string;
+    contactInfo: string;
+    customerName: string;
+    customerEmail: string;
+    customerPhone: string;
+    savedAccountContact: string;
+    cancel: string;
+    confirmPlaceOrder: string;
+    deliveryCityRequired: string;
+    deliveryAddressRequired: string;
+    pickupAgreementRequired: string;
   };
   delivery: {
     currency: string;
@@ -651,6 +677,37 @@ export const translations: Record<Language, TranslationDictionary> = {
       failedToPlaceOrder: "Failed to place order.",
       decreaseQuantity: "Decrease quantity",
       increaseQuantity: "Increase quantity",
+      deliveryDetailsTitle: "Delivery details",
+      deliveryDetailsDescription:
+        "Choose the delivery area and add the address details needed to complete the order.",
+      deliveryArea: "Delivery area",
+      deliveryCity: "City or area",
+      deliveryCityPlaceholder: "Example: Nablus",
+      deliveryAddress: "Delivery address",
+      deliveryAddressOptional: "Address/details (optional for pickup)",
+      deliveryAddressPlaceholder:
+        "Street, building, nearby landmark, or pickup details",
+      deliveryNotes: "Delivery notes",
+      deliveryNotesPlaceholder: "Optional notes for the store owner",
+      productsTotal: "Products total",
+      deliveryPrice: "Delivery price",
+      finalTotal: "Final total",
+      reviewOrder: "Review order",
+      confirmOrderTitle: "Confirm your order",
+      confirmOrderDescription:
+        "Review the products total, delivery price, final total, contact info, and delivery details before placing the order.",
+      contactInfo: "Contact info",
+      customerName: "Name",
+      customerEmail: "Email",
+      customerPhone: "Phone",
+      savedAccountContact:
+        "These details come from your account and may be used by the store owner to confirm the order.",
+      cancel: "Cancel",
+      confirmPlaceOrder: "Confirm and place order",
+      deliveryCityRequired: "Please enter the city or area.",
+      deliveryAddressRequired: "Please enter a delivery address.",
+      pickupAgreementRequired:
+        "Please agree or coordinate with the store owner on WhatsApp before choosing the Nablus receive point.",
     },
     delivery: {
       currency: "NIS",
@@ -1436,6 +1493,37 @@ export const translations: Record<Language, TranslationDictionary> = {
       failedToPlaceOrder: "فشل إنشاء الطلب.",
       decreaseQuantity: "تقليل الكمية",
       increaseQuantity: "زيادة الكمية",
+      deliveryDetailsTitle: "تفاصيل التوصيل",
+      deliveryDetailsDescription:
+        "اختر منطقة التوصيل وأضف تفاصيل العنوان اللازمة لإكمال الطلب.",
+      deliveryArea: "منطقة التوصيل",
+      deliveryCity: "المدينة أو المنطقة",
+      deliveryCityPlaceholder: "مثال: نابلس",
+      deliveryAddress: "عنوان التوصيل",
+      deliveryAddressOptional: "العنوان/التفاصيل (اختياري للاستلام)",
+      deliveryAddressPlaceholder:
+        "الشارع، المبنى، علامة قريبة، أو تفاصيل الاستلام",
+      deliveryNotes: "ملاحظات التوصيل",
+      deliveryNotesPlaceholder: "ملاحظات اختيارية لصاحب المتجر",
+      productsTotal: "مجموع المنتجات",
+      deliveryPrice: "سعر التوصيل",
+      finalTotal: "المجموع النهائي",
+      reviewOrder: "مراجعة الطلب",
+      confirmOrderTitle: "تأكيد الطلب",
+      confirmOrderDescription:
+        "راجع مجموع المنتجات، سعر التوصيل، المجموع النهائي، معلومات التواصل، وتفاصيل التوصيل قبل إنشاء الطلب.",
+      contactInfo: "معلومات التواصل",
+      customerName: "الاسم",
+      customerEmail: "البريد الإلكتروني",
+      customerPhone: "الهاتف",
+      savedAccountContact:
+        "هذه التفاصيل مأخوذة من حسابك وقد يستخدمها صاحب المتجر لتأكيد الطلب.",
+      cancel: "إلغاء",
+      confirmPlaceOrder: "تأكيد وإنشاء الطلب",
+      deliveryCityRequired: "يرجى إدخال المدينة أو المنطقة.",
+      deliveryAddressRequired: "يرجى إدخال عنوان التوصيل.",
+      pickupAgreementRequired:
+        "يرجى الموافقة أو التنسيق مع صاحب المتجر عبر واتساب قبل اختيار نقطة الاستلام في نابلس.",
     },
     delivery: {
       currency: "شيكل",

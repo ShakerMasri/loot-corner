@@ -4,6 +4,12 @@ import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { OptimizedImage } from "~/components/ui/OptimizedImage";
 import { useAppPreferences } from "~/components/providers/AppPreferencesProvider";
+import {
+  DELIVERY_AREAS,
+  formatDeliveryPriceNis,
+  getDeliveryAreaByKey,
+  type DeliveryAreaKey,
+} from "~/lib/delivery";
 
 type CartProduct = {
   id: string;
@@ -26,8 +32,16 @@ type CartItem = {
   product: CartProduct;
 };
 
+type CartCustomer = {
+  name: string | null;
+  email: string | null;
+  emailVerified: boolean;
+  phone: string | null;
+};
+
 type CartResponse = {
   cartItems?: CartItem[];
+  customer?: CartCustomer;
   message?: string;
 };
 
@@ -47,6 +61,12 @@ type Order = {
   paymentMethod: string;
   paymentStatus: string;
   totalAmount: string;
+  deliveryAreaKey: DeliveryAreaKey;
+  deliveryPrice: string;
+  deliveryCity: string;
+  deliveryAddress: string | null;
+  deliveryNotes: string | null;
+  pickupAgreementAccepted: boolean;
   createdAt: string;
   items: OrderItem[];
 };
@@ -56,30 +76,58 @@ type CheckoutResponse = {
   order?: Order;
 };
 
-function formatPrice(price: number) {
-  return `$${price.toFixed(2)}`;
+type DeliveryFormState = {
+  deliveryAreaKey: DeliveryAreaKey;
+  deliveryCity: string;
+  deliveryAddress: string;
+  deliveryNotes: string;
+  pickupAgreementAccepted: boolean;
+};
+
+const defaultDeliveryForm: DeliveryFormState = {
+  deliveryAreaKey: "west_bank_cities",
+  deliveryCity: "",
+  deliveryAddress: "",
+  deliveryNotes: "",
+  pickupAgreementAccepted: false,
+};
+
+function formatPrice(price: number, currency: string) {
+  return `${price.toFixed(2)} ${currency}`;
 }
 
 export function CartClient() {
   const { t } = useAppPreferences();
 
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
+  const [customer, setCustomer] = useState<CartCustomer | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [message, setMessage] = useState("");
   const [isAuthRequired, setIsAuthRequired] = useState(false);
   const [updatingItemId, setUpdatingItemId] = useState<string | null>(null);
   const [removingItemId, setRemovingItemId] = useState<string | null>(null);
+  const [deliveryForm, setDeliveryForm] =
+    useState<DeliveryFormState>(defaultDeliveryForm);
+  const [isConfirmingOrder, setIsConfirmingOrder] = useState(false);
   const checkoutKeyRef = useRef<string | null>(null);
   const [checkoutStatus, setCheckoutStatus] = useState<
     "idle" | "loading" | "success" | "error"
   >("idle");
   const [placedOrder, setPlacedOrder] = useState<Order | null>(null);
 
+  const selectedDeliveryArea =
+    getDeliveryAreaByKey(deliveryForm.deliveryAreaKey) ?? DELIVERY_AREAS[0]!;
+  const selectedDeliveryTranslation =
+    t.delivery.areas[selectedDeliveryArea.key];
+  const selectedDeliveryPrice = selectedDeliveryArea.priceNis;
+
   const total = useMemo(() => {
     return cartItems.reduce((sum, item) => {
       return sum + Number(item.product.price) * item.quantity;
     }, 0);
   }, [cartItems]);
+
+  const finalTotal = total + selectedDeliveryPrice;
 
   const itemCount = useMemo(() => {
     return cartItems.reduce((sum, item) => sum + item.quantity, 0);
@@ -105,6 +153,7 @@ export function CartClient() {
 
         if (!response.ok) {
           setCartItems([]);
+          setCustomer(null);
 
           if (response.status === 401) {
             setIsAuthRequired(true);
@@ -115,8 +164,10 @@ export function CartClient() {
         }
 
         setCartItems(data.cartItems ?? []);
+        setCustomer(data.customer ?? null);
       } catch {
         setCartItems([]);
+        setCustomer(null);
         setMessage(t.cart.failedToConnect);
       } finally {
         setIsLoading(false);
@@ -185,6 +236,69 @@ export function CartClient() {
     }
   }
 
+  function updateDeliveryForm<Field extends keyof DeliveryFormState>(
+    field: Field,
+    value: DeliveryFormState[Field],
+  ) {
+    setDeliveryForm((current) => ({
+      ...current,
+      [field]: value,
+    }));
+  }
+
+  function updateDeliveryArea(deliveryAreaKey: DeliveryAreaKey) {
+    const deliveryArea = getDeliveryAreaByKey(deliveryAreaKey);
+
+    setDeliveryForm((current) => ({
+      ...current,
+      deliveryAreaKey,
+      pickupAgreementAccepted: deliveryArea?.requiresCustomerAgreement
+        ? current.pickupAgreementAccepted
+        : false,
+    }));
+  }
+
+  function getDeliveryValidationError() {
+    if (deliveryForm.deliveryCity.trim().length < 2) {
+      return t.cart.deliveryCityRequired;
+    }
+
+    if (selectedDeliveryArea.requiresCustomerAgreement) {
+      if (!deliveryForm.pickupAgreementAccepted) {
+        return t.cart.pickupAgreementRequired;
+      }
+
+      return null;
+    }
+
+    if (deliveryForm.deliveryAddress.trim().length < 5) {
+      return t.cart.deliveryAddressRequired;
+    }
+
+    return null;
+  }
+
+  function reviewOrder() {
+    if (
+      checkoutStatus === "loading" ||
+      checkoutStatus === "success" ||
+      hasUnavailableItems ||
+      cartItems.length === 0
+    ) {
+      return;
+    }
+
+    const validationError = getDeliveryValidationError();
+
+    if (validationError) {
+      setMessage(validationError);
+      return;
+    }
+
+    setMessage("");
+    setIsConfirmingOrder(true);
+  }
+
   async function placeOrder() {
     if (
       checkoutStatus === "loading" ||
@@ -192,6 +306,14 @@ export function CartClient() {
       hasUnavailableItems ||
       cartItems.length === 0
     ) {
+      return;
+    }
+
+    const validationError = getDeliveryValidationError();
+
+    if (validationError) {
+      setIsConfirmingOrder(false);
+      setMessage(validationError);
       return;
     }
 
@@ -208,6 +330,11 @@ export function CartClient() {
         },
         body: JSON.stringify({
           idempotencyKey: checkoutKeyRef.current,
+          deliveryAreaKey: deliveryForm.deliveryAreaKey,
+          deliveryCity: deliveryForm.deliveryCity.trim(),
+          deliveryAddress: deliveryForm.deliveryAddress.trim(),
+          deliveryNotes: deliveryForm.deliveryNotes.trim(),
+          pickupAgreementAccepted: deliveryForm.pickupAgreementAccepted,
         }),
       });
 
@@ -219,15 +346,18 @@ export function CartClient() {
         }
 
         setCheckoutStatus("error");
+        setIsConfirmingOrder(false);
         setMessage(data.message ?? t.cart.failedToPlaceOrder);
         return;
       }
 
       setCheckoutStatus("success");
+      setIsConfirmingOrder(false);
       setPlacedOrder(data.order);
       setCartItems([]);
     } catch {
       setCheckoutStatus("error");
+      setIsConfirmingOrder(false);
       setMessage(t.cart.failedToConnect);
     }
   }
@@ -235,6 +365,7 @@ export function CartClient() {
   useEffect(() => {
     void loadCart();
   }, [loadCart]);
+
   if (isLoading) {
     return (
       <div className="space-y-6">
@@ -269,6 +400,10 @@ export function CartClient() {
   }
 
   if (placedOrder) {
+    const placedDeliveryAreaLabel =
+      t.delivery.areas[placedOrder.deliveryAreaKey]?.label ??
+      placedOrder.deliveryAreaKey;
+
     return (
       <div className="mx-auto max-w-2xl rounded-3xl border border-green-200 bg-green-50 p-6 shadow-sm dark:border-green-900 dark:bg-green-950">
         <div className="flex h-12 w-12 items-center justify-center rounded-full bg-green-600 text-xl font-black text-white">
@@ -295,10 +430,34 @@ export function CartClient() {
 
           <div className="flex items-center justify-between gap-4">
             <span className="text-zinc-500 dark:text-zinc-400">
+              {t.cart.deliveryArea}
+            </span>
+            <span className="text-right font-semibold text-zinc-900 dark:text-zinc-100">
+              {placedDeliveryAreaLabel}
+            </span>
+          </div>
+
+          <div className="flex items-center justify-between gap-4">
+            <span className="text-zinc-500 dark:text-zinc-400">
+              {t.cart.deliveryPrice}
+            </span>
+            <span className="font-semibold text-zinc-900 dark:text-zinc-100">
+              {formatDeliveryPriceNis(Number(placedOrder.deliveryPrice), {
+                free: t.delivery.free,
+                currency: t.delivery.currency,
+              })}
+            </span>
+          </div>
+
+          <div className="flex items-center justify-between gap-4">
+            <span className="text-zinc-500 dark:text-zinc-400">
               {t.cart.total}
             </span>
             <span className="font-bold text-zinc-950 dark:text-white">
-              {formatPrice(Number(placedOrder.totalAmount))}
+              {formatPrice(
+                Number(placedOrder.totalAmount),
+                t.delivery.currency,
+              )}
             </span>
           </div>
 
@@ -433,7 +592,7 @@ export function CartClient() {
         </div>
       )}
 
-      <div className="grid gap-6 lg:grid-cols-[1fr_360px] lg:items-start">
+      <div className="grid gap-6 lg:grid-cols-[1fr_380px] lg:items-start">
         <div className="space-y-4">
           {cartItems.map((item) => {
             const image = item.product.images.at(0);
@@ -484,13 +643,16 @@ export function CartClient() {
                         </Link>
 
                         <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
-                          {formatPrice(Number(item.product.price))}{" "}
+                          {formatPrice(
+                            Number(item.product.price),
+                            t.delivery.currency,
+                          )}{" "}
                           {t.cart.each}
                         </p>
                       </div>
 
                       <p className="text-lg font-black text-zinc-950 dark:text-white">
-                        {formatPrice(itemSubtotal)}
+                        {formatPrice(itemSubtotal, t.delivery.currency)}
                       </p>
                     </div>
 
@@ -567,6 +729,120 @@ export function CartClient() {
             {t.cart.orderSummary}
           </h2>
 
+          <div className="mt-5 space-y-5 border-b border-zinc-200 pb-5 dark:border-zinc-800">
+            <div>
+              <h3 className="text-sm font-bold text-zinc-950 dark:text-white">
+                {t.cart.deliveryDetailsTitle}
+              </h3>
+              <p className="mt-1 text-xs leading-5 text-zinc-500 dark:text-zinc-400">
+                {t.cart.deliveryDetailsDescription}
+              </p>
+            </div>
+
+            <fieldset className="space-y-2">
+              <legend className="text-sm font-semibold text-zinc-800 dark:text-zinc-200">
+                {t.cart.deliveryArea}
+              </legend>
+
+              {DELIVERY_AREAS.map((area) => {
+                const areaTranslation = t.delivery.areas[area.key];
+
+                return (
+                  <label
+                    key={area.key}
+                    className="flex cursor-pointer gap-3 rounded-2xl border border-zinc-200 p-3 text-sm transition hover:bg-zinc-50 dark:border-zinc-800 dark:hover:bg-zinc-950"
+                  >
+                    <input
+                      type="radio"
+                      name="deliveryAreaKey"
+                      value={area.key}
+                      checked={deliveryForm.deliveryAreaKey === area.key}
+                      onChange={() => updateDeliveryArea(area.key)}
+                      className="mt-1"
+                    />
+                    <span className="min-w-0 flex-1">
+                      <span className="flex items-start justify-between gap-3">
+                        <span className="font-semibold text-zinc-900 dark:text-zinc-100">
+                          {areaTranslation.label}
+                        </span>
+                        <span className="shrink-0 font-bold text-zinc-950 dark:text-white">
+                          {formatDeliveryPriceNis(area.priceNis, {
+                            free: t.delivery.free,
+                            currency: t.delivery.currency,
+                          })}
+                        </span>
+                      </span>
+                      {areaTranslation.note ? (
+                        <span className="mt-1 block text-xs leading-5 text-zinc-500 dark:text-zinc-400">
+                          {areaTranslation.note}
+                        </span>
+                      ) : null}
+                    </span>
+                  </label>
+                );
+              })}
+            </fieldset>
+
+            {selectedDeliveryArea.requiresCustomerAgreement &&
+            selectedDeliveryTranslation.agreementLabel ? (
+              <label className="flex gap-3 rounded-2xl border border-orange-200 bg-orange-50 p-3 text-sm font-medium text-orange-900 dark:border-orange-900 dark:bg-orange-950/50 dark:text-orange-100">
+                <input
+                  type="checkbox"
+                  checked={deliveryForm.pickupAgreementAccepted}
+                  onChange={(event) =>
+                    updateDeliveryForm(
+                      "pickupAgreementAccepted",
+                      event.target.checked,
+                    )
+                  }
+                  className="mt-1"
+                />
+                <span>{selectedDeliveryTranslation.agreementLabel}</span>
+              </label>
+            ) : null}
+
+            <label className="block text-sm font-semibold text-zinc-800 dark:text-zinc-200">
+              {t.cart.deliveryCity}
+              <input
+                type="text"
+                value={deliveryForm.deliveryCity}
+                onChange={(event) =>
+                  updateDeliveryForm("deliveryCity", event.target.value)
+                }
+                placeholder={t.cart.deliveryCityPlaceholder}
+                className="mt-2 w-full rounded-2xl border border-zinc-300 bg-white px-4 py-3 text-sm text-zinc-950 transition outline-none focus:border-orange-500 focus:ring-4 focus:ring-orange-100 dark:border-zinc-700 dark:bg-zinc-950 dark:text-white dark:focus:ring-orange-950"
+              />
+            </label>
+
+            <label className="block text-sm font-semibold text-zinc-800 dark:text-zinc-200">
+              {selectedDeliveryArea.requiresCustomerAgreement
+                ? t.cart.deliveryAddressOptional
+                : t.cart.deliveryAddress}
+              <textarea
+                value={deliveryForm.deliveryAddress}
+                onChange={(event) =>
+                  updateDeliveryForm("deliveryAddress", event.target.value)
+                }
+                placeholder={t.cart.deliveryAddressPlaceholder}
+                rows={3}
+                className="mt-2 w-full resize-none rounded-2xl border border-zinc-300 bg-white px-4 py-3 text-sm text-zinc-950 transition outline-none focus:border-orange-500 focus:ring-4 focus:ring-orange-100 dark:border-zinc-700 dark:bg-zinc-950 dark:text-white dark:focus:ring-orange-950"
+              />
+            </label>
+
+            <label className="block text-sm font-semibold text-zinc-800 dark:text-zinc-200">
+              {t.cart.deliveryNotes}
+              <textarea
+                value={deliveryForm.deliveryNotes}
+                onChange={(event) =>
+                  updateDeliveryForm("deliveryNotes", event.target.value)
+                }
+                placeholder={t.cart.deliveryNotesPlaceholder}
+                rows={2}
+                className="mt-2 w-full resize-none rounded-2xl border border-zinc-300 bg-white px-4 py-3 text-sm text-zinc-950 transition outline-none focus:border-orange-500 focus:ring-4 focus:ring-orange-100 dark:border-zinc-700 dark:bg-zinc-950 dark:text-white dark:focus:ring-orange-950"
+              />
+            </label>
+          </div>
+
           <div className="mt-5 space-y-3 border-b border-zinc-200 pb-5 text-sm dark:border-zinc-800">
             <div className="flex items-center justify-between gap-4">
               <span className="text-zinc-600 dark:text-zinc-400">
@@ -588,17 +864,38 @@ export function CartClient() {
 
             <div className="flex items-center justify-between gap-4">
               <span className="text-zinc-600 dark:text-zinc-400">
+                {t.cart.productsTotal}
+              </span>
+              <span className="font-semibold text-zinc-900 dark:text-zinc-100">
+                {formatPrice(total, t.delivery.currency)}
+              </span>
+            </div>
+
+            <div className="flex items-center justify-between gap-4">
+              <span className="text-zinc-600 dark:text-zinc-400">
+                {t.cart.deliveryPrice}
+              </span>
+              <span className="font-semibold text-zinc-900 dark:text-zinc-100">
+                {formatDeliveryPriceNis(selectedDeliveryPrice, {
+                  free: t.delivery.free,
+                  currency: t.delivery.currency,
+                })}
+              </span>
+            </div>
+
+            <div className="flex items-center justify-between gap-4">
+              <span className="text-zinc-600 dark:text-zinc-400">
                 {t.cart.estimatedTotal}
               </span>
               <span className="text-lg font-black text-zinc-950 dark:text-white">
-                {formatPrice(total)}
+                {formatPrice(finalTotal, t.delivery.currency)}
               </span>
             </div>
           </div>
 
           <button
             type="button"
-            onClick={() => void placeOrder()}
+            onClick={reviewOrder}
             disabled={
               checkoutStatus === "loading" ||
               checkoutStatus === "success" ||
@@ -610,7 +907,7 @@ export function CartClient() {
               ? t.cart.placingOrder
               : checkoutStatus === "success"
                 ? t.cart.orderPlacedButton
-                : t.cart.placeOrder}
+                : t.cart.reviewOrder}
           </button>
 
           <p className="mt-4 text-xs leading-5 text-zinc-500 dark:text-zinc-400">
@@ -657,6 +954,172 @@ export function CartClient() {
           </Link>
         </aside>
       </div>
+
+      {isConfirmingOrder ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-zinc-950/60 p-4">
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="confirm-order-title"
+            className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-3xl border border-zinc-200 bg-white p-5 shadow-xl dark:border-zinc-800 dark:bg-zinc-950"
+          >
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <h2
+                  id="confirm-order-title"
+                  className="text-2xl font-black text-zinc-950 dark:text-white"
+                >
+                  {t.cart.confirmOrderTitle}
+                </h2>
+                <p className="mt-2 text-sm leading-6 text-zinc-600 dark:text-zinc-400">
+                  {t.cart.confirmOrderDescription}
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setIsConfirmingOrder(false)}
+                className="rounded-full border border-zinc-300 px-3 py-1.5 text-sm font-semibold text-zinc-700 transition hover:bg-zinc-100 dark:border-zinc-700 dark:text-zinc-200 dark:hover:bg-zinc-900"
+              >
+                {t.cart.cancel}
+              </button>
+            </div>
+
+            <div className="mt-6 grid gap-4 sm:grid-cols-2">
+              <div className="rounded-2xl border border-zinc-200 p-4 dark:border-zinc-800">
+                <h3 className="text-sm font-bold text-zinc-950 dark:text-white">
+                  {t.cart.contactInfo}
+                </h3>
+                <dl className="mt-3 space-y-2 text-sm">
+                  <div className="flex justify-between gap-3">
+                    <dt className="text-zinc-500 dark:text-zinc-400">
+                      {t.cart.customerName}
+                    </dt>
+                    <dd className="text-right font-semibold text-zinc-900 dark:text-zinc-100">
+                      {customer?.name?.trim() ?? "—"}
+                    </dd>
+                  </div>
+                  <div className="flex justify-between gap-3">
+                    <dt className="text-zinc-500 dark:text-zinc-400">
+                      {t.cart.customerEmail}
+                    </dt>
+                    <dd className="text-right font-semibold text-zinc-900 dark:text-zinc-100">
+                      {customer?.email?.trim() ?? "—"}
+                    </dd>
+                  </div>
+                  <div className="flex justify-between gap-3">
+                    <dt className="text-zinc-500 dark:text-zinc-400">
+                      {t.cart.customerPhone}
+                    </dt>
+                    <dd className="text-right font-semibold text-zinc-900 dark:text-zinc-100">
+                      {customer?.phone?.trim() ?? "—"}
+                    </dd>
+                  </div>
+                </dl>
+                <p className="mt-3 text-xs leading-5 text-zinc-500 dark:text-zinc-400">
+                  {t.cart.savedAccountContact}
+                </p>
+              </div>
+
+              <div className="rounded-2xl border border-zinc-200 p-4 dark:border-zinc-800">
+                <h3 className="text-sm font-bold text-zinc-950 dark:text-white">
+                  {t.cart.deliveryDetailsTitle}
+                </h3>
+                <dl className="mt-3 space-y-2 text-sm">
+                  <div className="flex justify-between gap-3">
+                    <dt className="text-zinc-500 dark:text-zinc-400">
+                      {t.cart.deliveryArea}
+                    </dt>
+                    <dd className="text-right font-semibold text-zinc-900 dark:text-zinc-100">
+                      {selectedDeliveryTranslation.label}
+                    </dd>
+                  </div>
+                  <div className="flex justify-between gap-3">
+                    <dt className="text-zinc-500 dark:text-zinc-400">
+                      {t.cart.deliveryCity}
+                    </dt>
+                    <dd className="text-right font-semibold text-zinc-900 dark:text-zinc-100">
+                      {deliveryForm.deliveryCity.trim()}
+                    </dd>
+                  </div>
+                  <div className="flex justify-between gap-3">
+                    <dt className="text-zinc-500 dark:text-zinc-400">
+                      {t.cart.deliveryAddress}
+                    </dt>
+                    <dd className="text-right font-semibold text-zinc-900 dark:text-zinc-100">
+                      {deliveryForm.deliveryAddress.trim() || "—"}
+                    </dd>
+                  </div>
+                  <div className="flex justify-between gap-3">
+                    <dt className="text-zinc-500 dark:text-zinc-400">
+                      {t.cart.deliveryNotes}
+                    </dt>
+                    <dd className="text-right font-semibold text-zinc-900 dark:text-zinc-100">
+                      {deliveryForm.deliveryNotes.trim() || "—"}
+                    </dd>
+                  </div>
+                </dl>
+              </div>
+            </div>
+
+            <div className="mt-4 rounded-2xl border border-zinc-200 p-4 dark:border-zinc-800">
+              <h3 className="text-sm font-bold text-zinc-950 dark:text-white">
+                {t.cart.orderSummary}
+              </h3>
+              <dl className="mt-3 space-y-2 text-sm">
+                <div className="flex justify-between gap-4">
+                  <dt className="text-zinc-500 dark:text-zinc-400">
+                    {t.cart.productsTotal}
+                  </dt>
+                  <dd className="font-semibold text-zinc-900 dark:text-zinc-100">
+                    {formatPrice(total, t.delivery.currency)}
+                  </dd>
+                </div>
+                <div className="flex justify-between gap-4">
+                  <dt className="text-zinc-500 dark:text-zinc-400">
+                    {t.cart.deliveryPrice}
+                  </dt>
+                  <dd className="font-semibold text-zinc-900 dark:text-zinc-100">
+                    {formatDeliveryPriceNis(selectedDeliveryPrice, {
+                      free: t.delivery.free,
+                      currency: t.delivery.currency,
+                    })}
+                  </dd>
+                </div>
+                <div className="flex justify-between gap-4 border-t border-zinc-200 pt-3 dark:border-zinc-800">
+                  <dt className="font-bold text-zinc-950 dark:text-white">
+                    {t.cart.finalTotal}
+                  </dt>
+                  <dd className="text-lg font-black text-zinc-950 dark:text-white">
+                    {formatPrice(finalTotal, t.delivery.currency)}
+                  </dd>
+                </div>
+              </dl>
+            </div>
+
+            <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+              <button
+                type="button"
+                onClick={() => setIsConfirmingOrder(false)}
+                className="rounded-full border border-zinc-300 px-5 py-3 text-sm font-semibold text-zinc-800 transition hover:bg-zinc-100 dark:border-zinc-700 dark:text-zinc-100 dark:hover:bg-zinc-900"
+              >
+                {t.cart.cancel}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => void placeOrder()}
+                disabled={checkoutStatus === "loading"}
+                className="rounded-full bg-zinc-950 px-5 py-3 text-sm font-semibold text-white transition hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-white dark:text-zinc-950 dark:hover:bg-zinc-200"
+              >
+                {checkoutStatus === "loading"
+                  ? t.cart.placingOrder
+                  : t.cart.confirmPlaceOrder}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </section>
   );
 }

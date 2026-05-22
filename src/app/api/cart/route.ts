@@ -13,6 +13,25 @@ export async function GET() {
   }
 
   try {
+    const customer = await prisma.user.findUnique({
+      where: {
+        id: session.user.id,
+      },
+      select: {
+        name: true,
+        email: true,
+        emailVerified: true,
+        phone: true,
+      },
+    });
+
+    if (!customer) {
+      return NextResponse.json(
+        { message: "Your account could not be found." },
+        { status: 401 },
+      );
+    }
+
     const cartItems = await prisma.cartItem.findMany({
       where: {
         userId: session.user.id,
@@ -52,7 +71,7 @@ export async function GET() {
       },
     }));
 
-    return NextResponse.json({ cartItems: safeCartItems });
+    return NextResponse.json({ cartItems: safeCartItems, customer });
   } catch {
     return NextResponse.json(
       { message: "Failed to load cart." },

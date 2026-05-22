@@ -64,16 +64,28 @@ export function LegalPolicyClient({ pageKey }: LegalPolicyClientProps) {
           </h2>
 
           <div className="mt-3 flex flex-wrap gap-3">
-            <Link className="font-semibold text-orange-600 hover:text-orange-700 dark:text-orange-400" href="/terms">
+            <Link
+              className="font-semibold text-orange-600 hover:text-orange-700 dark:text-orange-400"
+              href="/terms"
+            >
               {t.legal.common.footerLinks.terms}
             </Link>
-            <Link className="font-semibold text-orange-600 hover:text-orange-700 dark:text-orange-400" href="/privacy">
+            <Link
+              className="font-semibold text-orange-600 hover:text-orange-700 dark:text-orange-400"
+              href="/privacy"
+            >
               {t.legal.common.footerLinks.privacy}
             </Link>
-            <Link className="font-semibold text-orange-600 hover:text-orange-700 dark:text-orange-400" href="/shipping">
+            <Link
+              className="font-semibold text-orange-600 hover:text-orange-700 dark:text-orange-400"
+              href="/shipping"
+            >
               {t.legal.common.footerLinks.shipping}
             </Link>
-            <Link className="font-semibold text-orange-600 hover:text-orange-700 dark:text-orange-400" href="/returns">
+            <Link
+              className="font-semibold text-orange-600 hover:text-orange-700 dark:text-orange-400"
+              href="/returns"
+            >
               {t.legal.common.footerLinks.returns}
             </Link>
           </div>

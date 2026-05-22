@@ -51,10 +51,27 @@ test("customer can place a controlled test order", async ({ page }) => {
 
     await page.goto("/cart");
 
-    const placeOrderButton = page.locator("aside").getByRole("button").first();
+    await page.getByLabel(/west bank cities/i).check();
+    await page.getByLabel(/city or area/i).fill("Nablus");
+    await page
+      .getByLabel(/delivery address/i)
+      .fill("Test delivery address near the city center");
 
-    await expect(placeOrderButton).toBeVisible();
-    await expect(placeOrderButton).toBeEnabled();
+    const reviewOrderButton = page
+      .locator("aside")
+      .getByRole("button", { name: /^review order$/i });
+
+    await expect(reviewOrderButton).toBeVisible();
+    await expect(reviewOrderButton).toBeEnabled();
+
+    await reviewOrderButton.click();
+
+    const confirmOrderButton = page.getByRole("button", {
+      name: /^confirm and place order$/i,
+    });
+
+    await expect(confirmOrderButton).toBeVisible();
+    await expect(confirmOrderButton).toBeEnabled();
 
     const orderResponsePromise = page.waitForResponse(
       (response) =>
@@ -62,7 +79,7 @@ test("customer can place a controlled test order", async ({ page }) => {
         response.request().method() === "POST",
     );
 
-    await placeOrderButton.click();
+    await confirmOrderButton.click();
 
     const orderResponse = await orderResponsePromise;
     const orderData = (await orderResponse.json()) as CreateOrderResponse;
