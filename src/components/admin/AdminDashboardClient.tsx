@@ -57,8 +57,11 @@ export function AdminDashboardClient() {
           </p>
         </Link>
 
-        <div className="rounded-3xl border border-dashed border-zinc-300 bg-white p-5 shadow-sm dark:border-zinc-700 dark:bg-zinc-900">
-          <p className="text-sm font-semibold tracking-wide text-zinc-500 uppercase dark:text-zinc-400">
+        <Link
+          href="/admin/categories"
+          className="rounded-3xl border border-zinc-200 bg-white p-5 shadow-sm transition hover:-translate-y-1 hover:border-orange-300 hover:bg-orange-50 dark:border-zinc-800 dark:bg-zinc-900 dark:hover:border-orange-900 dark:hover:bg-orange-950"
+        >
+          <p className="text-sm font-semibold tracking-wide text-orange-600 uppercase dark:text-orange-400">
             {t.admin.dashboard.categoriesBadge}
           </p>
 
@@ -69,7 +72,7 @@ export function AdminDashboardClient() {
           <p className="mt-2 text-sm leading-6 text-zinc-600 dark:text-zinc-400">
             {t.admin.dashboard.categoriesDescription}
           </p>
-        </div>
+        </Link>
       </section>
     </main>
   );

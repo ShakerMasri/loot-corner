@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  createCategorySchema,
   createProductSchema,
   loginSchema,
   registerSchema,
@@ -84,6 +85,26 @@ describe("updateProfileSchema", () => {
     const result = updateProfileSchema.safeParse({
       name: "Customer Name",
       phone: "abc-phone",
+    });
+
+    expect(result.success).toBe(false);
+  });
+});
+
+describe("createCategorySchema", () => {
+  it("accepts valid category input", () => {
+    const result = createCategorySchema.safeParse({
+      name: "Figures",
+      slug: "figures",
+    });
+
+    expect(result.success).toBe(true);
+  });
+
+  it("rejects invalid category slugs", () => {
+    const result = createCategorySchema.safeParse({
+      name: "Figures",
+      slug: "Bad Slug!",
     });
 
     expect(result.success).toBe(false);

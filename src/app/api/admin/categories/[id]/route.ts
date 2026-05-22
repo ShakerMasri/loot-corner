@@ -27,7 +27,7 @@ function categoryInUseResponse() {
         _form: ["Category is used by existing products."],
       },
     },
-    { status: 400 },
+    { status: 409 },
   );
 }
 
