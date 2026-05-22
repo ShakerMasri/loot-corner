@@ -1,33 +1,47 @@
 import { Prisma } from "@prisma/client";
 import { NextResponse } from "next/server";
 import { validateSameOriginRequest } from "~/lib/csrf";
+import { getDeliveryAreaByKey } from "~/lib/delivery";
 import { prisma } from "~/lib/prisma";
 import { rateLimit } from "~/lib/rate-limit";
 import { auth } from "~/server/auth";
 import { createOrderSchema } from "~/server/validations/order";
 
-type OrderWithItems = {
-  id: string;
-  status: string;
-  paymentMethod: string;
-  paymentStatus: string;
-  totalAmount: Prisma.Decimal;
-  createdAt: Date;
+const orderSelect = {
+  id: true,
+  status: true,
+  paymentMethod: true,
+  paymentStatus: true,
+  totalAmount: true,
+  deliveryAreaKey: true,
+  deliveryPrice: true,
+  deliveryCity: true,
+  deliveryAddress: true,
+  deliveryNotes: true,
+  pickupAgreementAccepted: true,
+  createdAt: true,
   items: {
-    id: string;
-    quantity: number;
-    priceAtPurchase: Prisma.Decimal;
-    subtotalAmount: Prisma.Decimal;
-    productNameAtPurchase: string;
-    productSlugAtPurchase: string;
-    productImagesAtPurchase: string[];
-  }[];
-};
+    select: {
+      id: true,
+      quantity: true,
+      priceAtPurchase: true,
+      subtotalAmount: true,
+      productNameAtPurchase: true,
+      productSlugAtPurchase: true,
+      productImagesAtPurchase: true,
+    },
+  },
+} satisfies Prisma.OrderSelect;
+
+type OrderWithItems = Prisma.OrderGetPayload<{
+  select: typeof orderSelect;
+}>;
 
 function serializeOrder(order: OrderWithItems) {
   return {
     ...order,
     totalAmount: order.totalAmount.toString(),
+    deliveryPrice: order.deliveryPrice.toString(),
     createdAt: order.createdAt.toISOString(),
     items: order.items.map((item) => ({
       ...item,
@@ -57,25 +71,7 @@ export async function GET() {
       orderBy: {
         createdAt: "desc",
       },
-      select: {
-        id: true,
-        status: true,
-        paymentMethod: true,
-        paymentStatus: true,
-        totalAmount: true,
-        createdAt: true,
-        items: {
-          select: {
-            id: true,
-            quantity: true,
-            priceAtPurchase: true,
-            subtotalAmount: true,
-            productNameAtPurchase: true,
-            productSlugAtPurchase: true,
-            productImagesAtPurchase: true,
-          },
-        },
-      },
+      select: orderSelect,
     });
 
     return NextResponse.json({
@@ -123,7 +119,23 @@ export async function POST(request: Request) {
     );
   }
 
-  const { idempotencyKey } = parsed.data;
+  const {
+    idempotencyKey,
+    deliveryAreaKey,
+    deliveryCity,
+    deliveryAddress,
+    deliveryNotes,
+    pickupAgreementAccepted,
+  } = parsed.data;
+
+  const deliveryArea = getDeliveryAreaByKey(deliveryAreaKey);
+
+  if (!deliveryArea) {
+    return NextResponse.json(
+      { message: "Please select a valid delivery area." },
+      { status: 400 },
+    );
+  }
 
   try {
     const order = await prisma.$transaction(async (tx) => {
@@ -158,25 +170,7 @@ export async function POST(request: Request) {
             idempotencyKey,
           },
         },
-        select: {
-          id: true,
-          status: true,
-          paymentMethod: true,
-          paymentStatus: true,
-          totalAmount: true,
-          createdAt: true,
-          items: {
-            select: {
-              id: true,
-              quantity: true,
-              priceAtPurchase: true,
-              subtotalAmount: true,
-              productNameAtPurchase: true,
-              productSlugAtPurchase: true,
-              productImagesAtPurchase: true,
-            },
-          },
-        },
+        select: orderSelect,
       });
 
       if (existingOrder) {
@@ -243,15 +237,24 @@ export async function POST(request: Request) {
         }
       }
 
-      const totalAmount = cartItems.reduce((sum, item) => {
+      const productsTotalAmount = cartItems.reduce((sum, item) => {
         return sum.plus(item.product.price.mul(item.quantity));
       }, new Prisma.Decimal(0));
+
+      const deliveryPrice = new Prisma.Decimal(deliveryArea.priceNis);
+      const totalAmount = productsTotalAmount.plus(deliveryPrice);
 
       const createdOrder = await tx.order.create({
         data: {
           userId,
           idempotencyKey,
           totalAmount,
+          deliveryAreaKey: deliveryArea.key,
+          deliveryPrice,
+          deliveryCity,
+          deliveryAddress: deliveryAddress || null,
+          deliveryNotes: deliveryNotes || null,
+          pickupAgreementAccepted,
           paymentMethod: "CASH_ON_DELIVERY",
           paymentStatus: "UNPAID",
           customerNameAtPurchase: customer.name,
@@ -269,25 +272,7 @@ export async function POST(request: Request) {
             })),
           },
         },
-        select: {
-          id: true,
-          status: true,
-          paymentMethod: true,
-          paymentStatus: true,
-          totalAmount: true,
-          createdAt: true,
-          items: {
-            select: {
-              id: true,
-              quantity: true,
-              priceAtPurchase: true,
-              subtotalAmount: true,
-              productNameAtPurchase: true,
-              productSlugAtPurchase: true,
-              productImagesAtPurchase: true,
-            },
-          },
-        },
+        select: orderSelect,
       });
 
       await tx.cartItem.deleteMany({
@@ -357,25 +342,7 @@ export async function POST(request: Request) {
             idempotencyKey,
           },
         },
-        select: {
-          id: true,
-          status: true,
-          paymentMethod: true,
-          paymentStatus: true,
-          totalAmount: true,
-          createdAt: true,
-          items: {
-            select: {
-              id: true,
-              quantity: true,
-              priceAtPurchase: true,
-              subtotalAmount: true,
-              productNameAtPurchase: true,
-              productSlugAtPurchase: true,
-              productImagesAtPurchase: true,
-            },
-          },
-        },
+        select: orderSelect,
       });
 
       if (existingOrder) {

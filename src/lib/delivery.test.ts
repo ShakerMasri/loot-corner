@@ -23,7 +23,6 @@ describe("delivery areas", () => {
     expect(area).not.toBeNull();
     expect(area?.priceNis).toBe(0);
     expect(area?.requiresCustomerAgreement).toBe(true);
-    expect(area?.noteEn).toContain("WhatsApp");
   });
 
   it("validates delivery area keys", () => {
@@ -35,8 +34,12 @@ describe("delivery areas", () => {
     expect(getDeliveryPriceNis("unknown-area")).toBeNull();
   });
 
-  it("formats delivery prices", () => {
-    expect(formatDeliveryPriceNis(0)).toBe("Free");
-    expect(formatDeliveryPriceNis(20)).toBe("20 NIS");
+  it("formats delivery prices with caller-provided labels", () => {
+    expect(formatDeliveryPriceNis(0, { free: "Free", currency: "NIS" })).toBe(
+      "Free",
+    );
+    expect(formatDeliveryPriceNis(20, { free: "Free", currency: "NIS" })).toBe(
+      "20 NIS",
+    );
   });
 });
