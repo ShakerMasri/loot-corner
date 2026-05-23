@@ -7,6 +7,13 @@ export type LegalPageKey =
   | "returns"
   | "contact";
 
+export type DeliveryAreaTranslationKey =
+  | "nablus_receive_point"
+  | "west_bank_cities"
+  | "jerusalem"
+  | "lands_48"
+  | "west_jerusalem_area";
+
 export type LegalSection = {
   title: string;
   paragraphs?: string[];
@@ -134,6 +141,44 @@ export type TranslationDictionary = {
     failedToPlaceOrder: string;
     decreaseQuantity: string;
     increaseQuantity: string;
+    deliveryDetailsTitle: string;
+    deliveryDetailsDescription: string;
+    deliveryArea: string;
+    deliveryCity: string;
+    deliveryCityPlaceholder: string;
+    deliveryAddress: string;
+    deliveryAddressOptional: string;
+    deliveryAddressPlaceholder: string;
+    deliveryNotes: string;
+    deliveryNotesPlaceholder: string;
+    productsTotal: string;
+    deliveryPrice: string;
+    finalTotal: string;
+    reviewOrder: string;
+    confirmOrderTitle: string;
+    confirmOrderDescription: string;
+    contactInfo: string;
+    customerName: string;
+    customerEmail: string;
+    customerPhone: string;
+    savedAccountContact: string;
+    cancel: string;
+    confirmPlaceOrder: string;
+    deliveryCityRequired: string;
+    deliveryAddressRequired: string;
+    pickupAgreementRequired: string;
+  };
+  delivery: {
+    currency: string;
+    free: string;
+    areas: Record<
+      DeliveryAreaTranslationKey,
+      {
+        label: string;
+        note?: string;
+        agreementLabel?: string;
+      }
+    >;
   };
   orders: {
     badge: string;
@@ -156,6 +201,16 @@ export type TranslationDictionary = {
     quantity: string;
     subtotal: string;
     noImage: string;
+    deliveryDetails: string;
+    deliveryArea: string;
+    deliveryCity: string;
+    deliveryAddress: string;
+    deliveryNotes: string;
+    deliveryPrice: string;
+    pickupAgreement: string;
+    yes: string;
+    notProvided: string;
+    notRequired: string;
     failedToLoad: string;
     failedToConnect: string;
     statuses: Record<string, string>;
@@ -381,6 +436,20 @@ export type TranslationDictionary = {
       orderStatus: string;
       paymentStatus: string;
       items: string;
+      contactDetails: string;
+      customerName: string;
+      customerEmail: string;
+      customerPhone: string;
+      deliveryDetails: string;
+      deliveryArea: string;
+      deliveryCity: string;
+      deliveryAddress: string;
+      deliveryNotes: string;
+      deliveryPrice: string;
+      pickupAgreement: string;
+      yes: string;
+      notProvided: string;
+      notRequired: string;
       adminNote: string;
       adminNotePlaceholder: string;
       saveNote: string;
@@ -632,6 +701,61 @@ export const translations: Record<Language, TranslationDictionary> = {
       failedToPlaceOrder: "Failed to place order.",
       decreaseQuantity: "Decrease quantity",
       increaseQuantity: "Increase quantity",
+      deliveryDetailsTitle: "Delivery details",
+      deliveryDetailsDescription:
+        "Choose the delivery area and add the address details needed to complete the order.",
+      deliveryArea: "Delivery area",
+      deliveryCity: "City or area",
+      deliveryCityPlaceholder: "Example: Nablus",
+      deliveryAddress: "Delivery address",
+      deliveryAddressOptional: "Address/details (optional for pickup)",
+      deliveryAddressPlaceholder:
+        "Street, building, nearby landmark, or pickup details",
+      deliveryNotes: "Delivery notes",
+      deliveryNotesPlaceholder: "Optional notes for the store owner",
+      productsTotal: "Products total",
+      deliveryPrice: "Delivery price",
+      finalTotal: "Final total",
+      reviewOrder: "Review order",
+      confirmOrderTitle: "Confirm your order",
+      confirmOrderDescription:
+        "Review the products total, delivery price, final total, contact info, and delivery details before placing the order.",
+      contactInfo: "Contact info",
+      customerName: "Name",
+      customerEmail: "Email",
+      customerPhone: "Phone",
+      savedAccountContact:
+        "These details come from your account and may be used by the store owner to confirm the order.",
+      cancel: "Cancel",
+      confirmPlaceOrder: "Confirm and place order",
+      deliveryCityRequired: "Please enter the city or area.",
+      deliveryAddressRequired: "Please enter a delivery address.",
+      pickupAgreementRequired:
+        "Please agree or coordinate with the store owner on WhatsApp before choosing the Nablus receive point.",
+    },
+    delivery: {
+      currency: "NIS",
+      free: "Free",
+      areas: {
+        nablus_receive_point: {
+          label: "Nablus receive point",
+          note: "Free receive/pickup option in Nablus. The customer must agree or coordinate with the store owner on WhatsApp before receiving the order.",
+          agreementLabel:
+            "I understand this is a free receive/pickup option in Nablus and I must agree or coordinate with the store owner on WhatsApp before receiving the order.",
+        },
+        west_bank_cities: {
+          label: "West Bank cities",
+        },
+        jerusalem: {
+          label: "Jerusalem",
+        },
+        lands_48: {
+          label: "48 lands",
+        },
+        west_jerusalem_area: {
+          label: "West Jerusalem, Ein Rafa, Ein Naqouba, Abu Ghosh",
+        },
+      },
     },
     orders: {
       badge: "Account",
@@ -656,6 +780,16 @@ export const translations: Record<Language, TranslationDictionary> = {
       quantity: "Quantity",
       subtotal: "Subtotal",
       noImage: "No image",
+      deliveryDetails: "Delivery details",
+      deliveryArea: "Delivery area",
+      deliveryCity: "City or area",
+      deliveryAddress: "Delivery address",
+      deliveryNotes: "Delivery notes",
+      deliveryPrice: "Delivery price",
+      pickupAgreement: "Pickup agreement",
+      yes: "Yes",
+      notProvided: "Not provided",
+      notRequired: "Not required",
       failedToLoad: "Failed to load orders.",
       failedToConnect: "Failed to connect to the server.",
       statuses: {
@@ -806,7 +940,7 @@ export const translations: Record<Language, TranslationDictionary> = {
       common: {
         policyBadge: "Store policy",
         lastUpdatedLabel: "Last updated",
-        lastUpdatedDate: "May 22, 2026",
+        lastUpdatedDate: "May 23, 2026",
         usefulLinks: "Useful links",
         footerLinks: {
           terms: "Terms",
@@ -850,6 +984,7 @@ export const translations: Record<Language, TranslationDictionary> = {
               paragraphs: [
                 "Orders are currently paid by cash on delivery.",
                 "Adding products to the cart does not reserve stock. Stock and prices are checked again when the order is placed.",
+                "Delivery area, delivery price, and final total are shown before you confirm the order.",
                 "The store may contact you using your phone number or email to confirm the order before delivery.",
               ],
             },
@@ -905,6 +1040,7 @@ export const translations: Record<Language, TranslationDictionary> = {
                 "Account details, email verification status, and order history.",
                 "Cart items, ordered products, quantities, prices, totals, payment method, and payment status.",
                 "Customer name, email, and phone snapshot at the time an order is placed.",
+                "Delivery area, delivery city or area text, delivery address/details, delivery notes, delivery price, and pickup/receive-point agreement status when provided during checkout.",
                 "Session information, IP address, and user-agent for login, security, and rate limiting.",
                 "Theme and language preference stored in your browser.",
               ],
@@ -912,14 +1048,14 @@ export const translations: Record<Language, TranslationDictionary> = {
             {
               title: "2. Information not currently collected",
               paragraphs: [
-                "The website does not currently collect online card payment details, customer-uploaded images, or delivery address fields.",
-                "Important future note: if delivery address, city, or delivery area fields are added later, this Privacy Policy, Shipping Policy, checkout text, and database documentation should be updated.",
+                "The website does not currently collect online card payment details or customer-uploaded images.",
+                "Delivery information is collected only as needed to prepare, confirm, and deliver or arrange pickup/receive-point orders.",
               ],
             },
             {
               title: "3. How we use information",
               paragraphs: [
-                "We use information to create and manage accounts, process orders, contact customers about orders, show order history, protect the website, prevent abuse, and maintain store operations.",
+                "We use information to create and manage accounts, process orders, calculate delivery fees, contact customers about orders, arrange delivery or pickup/receive-point coordination, show order history, protect the website, prevent abuse, and maintain store operations.",
               ],
             },
             {
@@ -960,16 +1096,17 @@ export const translations: Record<Language, TranslationDictionary> = {
             "This policy explains the current delivery areas, estimated timing, and delivery prices.",
           sections: [
             {
-              title: "1. Delivery areas",
+              title: "1. Delivery and receive areas",
               paragraphs: [
-                "The store currently delivers to the West Bank, Jerusalem, 48 lands, West Jerusalem, Ein Rafa, Ein Naqouba, and Abu Ghosh.",
+                "The store currently supports delivery to the West Bank, Jerusalem, 48 lands, West Jerusalem, Ein Rafa, Ein Naqouba, and Abu Ghosh.",
+                "A free receive/pickup point option may be available in Nablus city when the customer agrees or coordinates with the store owner on WhatsApp.",
               ],
             },
             {
               title: "2. Delivery provider",
               paragraphs: [
-                "Delivery is handled by a third-party shipping company.",
-                "Delivery times may depend on the shipping company, location, weather, traffic, closures, holidays, or other events outside the store’s control.",
+                "Delivery may be handled by a third-party shipping company or another delivery arrangement confirmed by the store.",
+                "Delivery times may depend on the shipping company, location, weather, traffic, closures, holidays, customer availability, or other events outside the store’s control.",
               ],
             },
             {
@@ -981,6 +1118,7 @@ export const translations: Record<Language, TranslationDictionary> = {
             {
               title: "4. Delivery prices",
               items: [
+                "Nablus city receive/pickup point: free, after agreement or WhatsApp coordination with the store owner.",
                 "West Bank cities: 20 NIS.",
                 "Jerusalem: 30 NIS.",
                 "48 lands: 70 NIS.",
@@ -988,10 +1126,11 @@ export const translations: Record<Language, TranslationDictionary> = {
               ],
             },
             {
-              title: "5. Delivery address note",
+              title: "5. Delivery details and confirmation",
               paragraphs: [
-                "The website does not currently collect a full delivery address during checkout.",
-                "The store may contact you using your phone number to confirm delivery details before sending the order.",
+                "During checkout, the customer selects a delivery area and provides the required city/area and address or receive-point details.",
+                "The delivery price and final total are shown before the customer confirms the order.",
+                "The store may contact you using your phone number or email to confirm delivery or receive-point details before sending or preparing the order.",
               ],
             },
           ],
@@ -1135,6 +1274,20 @@ export const translations: Record<Language, TranslationDictionary> = {
         orderStatus: "Order status",
         paymentStatus: "Payment status",
         items: "Items",
+        contactDetails: "Contact details",
+        customerName: "Customer name",
+        customerEmail: "Customer email",
+        customerPhone: "Customer phone",
+        deliveryDetails: "Delivery details",
+        deliveryArea: "Delivery area",
+        deliveryCity: "City or area",
+        deliveryAddress: "Delivery address",
+        deliveryNotes: "Delivery notes",
+        deliveryPrice: "Delivery price",
+        pickupAgreement: "Pickup agreement",
+        yes: "Yes",
+        notProvided: "Not provided",
+        notRequired: "Not required",
         adminNote: "Admin note",
         adminNotePlaceholder: "Private note for admins only...",
         saveNote: "Save note",
@@ -1393,6 +1546,61 @@ export const translations: Record<Language, TranslationDictionary> = {
       failedToPlaceOrder: "فشل إنشاء الطلب.",
       decreaseQuantity: "تقليل الكمية",
       increaseQuantity: "زيادة الكمية",
+      deliveryDetailsTitle: "تفاصيل التوصيل",
+      deliveryDetailsDescription:
+        "اختر منطقة التوصيل وأضف تفاصيل العنوان اللازمة لإكمال الطلب.",
+      deliveryArea: "منطقة التوصيل",
+      deliveryCity: "المدينة أو المنطقة",
+      deliveryCityPlaceholder: "مثال: نابلس",
+      deliveryAddress: "عنوان التوصيل",
+      deliveryAddressOptional: "العنوان/التفاصيل (اختياري للاستلام)",
+      deliveryAddressPlaceholder:
+        "الشارع، المبنى، علامة قريبة، أو تفاصيل الاستلام",
+      deliveryNotes: "ملاحظات التوصيل",
+      deliveryNotesPlaceholder: "ملاحظات اختيارية لصاحب المتجر",
+      productsTotal: "مجموع المنتجات",
+      deliveryPrice: "سعر التوصيل",
+      finalTotal: "المجموع النهائي",
+      reviewOrder: "مراجعة الطلب",
+      confirmOrderTitle: "تأكيد الطلب",
+      confirmOrderDescription:
+        "راجع مجموع المنتجات، سعر التوصيل، المجموع النهائي، معلومات التواصل، وتفاصيل التوصيل قبل إنشاء الطلب.",
+      contactInfo: "معلومات التواصل",
+      customerName: "الاسم",
+      customerEmail: "البريد الإلكتروني",
+      customerPhone: "الهاتف",
+      savedAccountContact:
+        "هذه التفاصيل مأخوذة من حسابك وقد يستخدمها صاحب المتجر لتأكيد الطلب.",
+      cancel: "إلغاء",
+      confirmPlaceOrder: "تأكيد وإنشاء الطلب",
+      deliveryCityRequired: "يرجى إدخال المدينة أو المنطقة.",
+      deliveryAddressRequired: "يرجى إدخال عنوان التوصيل.",
+      pickupAgreementRequired:
+        "يرجى الموافقة أو التنسيق مع صاحب المتجر عبر واتساب قبل اختيار نقطة الاستلام في نابلس.",
+    },
+    delivery: {
+      currency: "شيكل",
+      free: "مجاني",
+      areas: {
+        nablus_receive_point: {
+          label: "نقطة استلام في نابلس",
+          note: "خيار استلام مجاني في نابلس. يجب على الزبون الموافقة أو التنسيق مع صاحب المتجر عبر واتساب قبل استلام الطلب.",
+          agreementLabel:
+            "أفهم أن هذا خيار استلام مجاني في نابلس ويجب أن أوافق أو أنسق مع صاحب المتجر عبر واتساب قبل استلام الطلب.",
+        },
+        west_bank_cities: {
+          label: "مدن الضفة الغربية",
+        },
+        jerusalem: {
+          label: "القدس",
+        },
+        lands_48: {
+          label: "أراضي 48",
+        },
+        west_jerusalem_area: {
+          label: "غرب القدس، عين رافا، عين نقوبا، أبو غوش",
+        },
+      },
     },
     orders: {
       badge: "الحساب",
@@ -1416,6 +1624,16 @@ export const translations: Record<Language, TranslationDictionary> = {
       quantity: "الكمية",
       subtotal: "المجموع الفرعي",
       noImage: "لا توجد صورة",
+      deliveryDetails: "تفاصيل التوصيل",
+      deliveryArea: "منطقة التوصيل",
+      deliveryCity: "المدينة أو المنطقة",
+      deliveryAddress: "عنوان التوصيل",
+      deliveryNotes: "ملاحظات التوصيل",
+      deliveryPrice: "سعر التوصيل",
+      pickupAgreement: "موافقة الاستلام",
+      yes: "نعم",
+      notProvided: "غير متوفر",
+      notRequired: "غير مطلوب",
       failedToLoad: "فشل تحميل الطلبات.",
       failedToConnect: "فشل الاتصال بالخادم.",
       statuses: {
@@ -1564,7 +1782,7 @@ export const translations: Record<Language, TranslationDictionary> = {
       common: {
         policyBadge: "سياسة المتجر",
         lastUpdatedLabel: "آخر تحديث",
-        lastUpdatedDate: "22 مايو 2026",
+        lastUpdatedDate: "23 مايو 2026",
         usefulLinks: "روابط مفيدة",
         footerLinks: {
           terms: "الشروط",
@@ -1608,6 +1826,7 @@ export const translations: Record<Language, TranslationDictionary> = {
               paragraphs: [
                 "يتم الدفع حالياً عند الاستلام.",
                 "إضافة المنتجات إلى السلة لا تعني حجز المخزون، ويتم فحص المخزون والأسعار مرة أخرى عند إنشاء الطلب.",
+                "يتم عرض منطقة التوصيل وسعر التوصيل والمجموع النهائي قبل تأكيد الطلب.",
                 "قد يتواصل المتجر معك عبر رقم الهاتف أو البريد الإلكتروني لتأكيد الطلب قبل التوصيل.",
               ],
             },
@@ -1661,6 +1880,7 @@ export const translations: Record<Language, TranslationDictionary> = {
                 "بيانات الحساب، حالة تأكيد البريد الإلكتروني، وسجل الطلبات.",
                 "عناصر السلة، المنتجات المطلوبة، الكميات، الأسعار، المجموع، طريقة الدفع وحالة الدفع.",
                 "نسخة من اسم العميل وبريده الإلكتروني ورقم هاتفه وقت إنشاء الطلب.",
+                "منطقة التوصيل، المدينة أو المنطقة، العنوان أو تفاصيل الاستلام، ملاحظات التوصيل، سعر التوصيل، وحالة الموافقة على نقطة الاستلام عند إدخالها أثناء إنشاء الطلب.",
                 "بيانات الجلسة، عنوان IP، ونوع المتصفح لأغراض تسجيل الدخول والأمان والحد من إساءة الاستخدام.",
                 "تفضيل المظهر واللغة المخزن في المتصفح.",
               ],
@@ -1668,14 +1888,14 @@ export const translations: Record<Language, TranslationDictionary> = {
             {
               title: "2. بيانات لا نجمعها حالياً",
               paragraphs: [
-                "لا يجمع الموقع حالياً بيانات بطاقات الدفع الإلكترونية أو صور مرفوعة من العملاء أو حقول عنوان التوصيل.",
-                "ملاحظة مستقبلية مهمة: إذا تمت إضافة حقول عنوان التوصيل أو المدينة أو منطقة التوصيل لاحقاً، يجب تحديث سياسة الخصوصية وسياسة التوصيل ونصوص إنشاء الطلب وتوثيق قاعدة البيانات.",
+                "لا يجمع الموقع حالياً بيانات بطاقات الدفع الإلكترونية أو صوراً مرفوعة من العملاء.",
+                "يتم جمع بيانات التوصيل فقط بالقدر اللازم لتجهيز الطلب، تأكيده، توصيله أو تنسيق الاستلام من نقطة الاستلام.",
               ],
             },
             {
               title: "3. كيف نستخدم البيانات",
               paragraphs: [
-                "نستخدم البيانات لإنشاء وإدارة الحسابات، معالجة الطلبات، التواصل مع العملاء بخصوص الطلبات، عرض سجل الطلبات، حماية الموقع، منع إساءة الاستخدام، وتشغيل المتجر.",
+                "نستخدم البيانات لإنشاء وإدارة الحسابات، معالجة الطلبات، حساب رسوم التوصيل، التواصل مع العملاء بخصوص الطلبات، تنسيق التوصيل أو الاستلام من نقطة الاستلام، عرض سجل الطلبات، حماية الموقع، منع إساءة الاستخدام، وتشغيل المتجر.",
               ],
             },
             {
@@ -1716,16 +1936,17 @@ export const translations: Record<Language, TranslationDictionary> = {
             "توضح هذه السياسة مناطق التوصيل الحالية، المدة المتوقعة، وأسعار التوصيل.",
           sections: [
             {
-              title: "1. مناطق التوصيل",
+              title: "1. مناطق التوصيل والاستلام",
               paragraphs: [
-                "يوصل المتجر حالياً إلى مدن الضفة، القدس، أراضي 48، القدس الغربية، عين رافا، عين نقوبا، وأبو غوش.",
+                "يدعم المتجر حالياً التوصيل إلى مدن الضفة، القدس، أراضي 48، القدس الغربية، عين رافا، عين نقوبا، وأبو غوش.",
+                "قد تتوفر نقطة استلام مجانية في مدينة نابلس عندما يوافق العميل أو ينسق مع صاحب المتجر عبر واتساب.",
               ],
             },
             {
               title: "2. مزود التوصيل",
               paragraphs: [
-                "يتم التوصيل عن طريق شركة شحن خارجية.",
-                "قد تختلف مدة التوصيل حسب شركة الشحن، المنطقة، الطقس، الحركة، الإغلاقات، العطل أو أمور أخرى خارج سيطرة المتجر.",
+                "قد يتم التوصيل عن طريق شركة شحن خارجية أو أي ترتيب توصيل آخر يؤكده المتجر.",
+                "قد تختلف مدة التوصيل حسب شركة الشحن، المنطقة، الطقس، الحركة، الإغلاقات، العطل، توفر العميل أو أمور أخرى خارج سيطرة المتجر.",
               ],
             },
             {
@@ -1737,6 +1958,7 @@ export const translations: Record<Language, TranslationDictionary> = {
             {
               title: "4. أسعار التوصيل",
               items: [
+                "نقطة استلام في مدينة نابلس: مجاناً، بعد الموافقة أو التنسيق عبر واتساب مع صاحب المتجر.",
                 "مدن الضفة: 20 شيكل.",
                 "القدس: 30 شيكل.",
                 "أراضي 48: 70 شيكل.",
@@ -1744,10 +1966,11 @@ export const translations: Record<Language, TranslationDictionary> = {
               ],
             },
             {
-              title: "5. ملاحظة بخصوص عنوان التوصيل",
+              title: "5. تفاصيل التوصيل والتأكيد",
               paragraphs: [
-                "لا يجمع الموقع حالياً عنوان توصيل كامل أثناء إنشاء الطلب.",
-                "قد يتواصل المتجر معك عبر رقم الهاتف لتأكيد تفاصيل التوصيل قبل إرسال الطلب.",
+                "أثناء إنشاء الطلب، يختار العميل منطقة التوصيل ويدخل المدينة أو المنطقة المطلوبة والعنوان أو تفاصيل نقطة الاستلام.",
+                "يتم عرض سعر التوصيل والمجموع النهائي قبل تأكيد الطلب.",
+                "قد يتواصل المتجر معك عبر رقم الهاتف أو البريد الإلكتروني لتأكيد تفاصيل التوصيل أو الاستلام قبل إرسال الطلب أو تجهيزه.",
               ],
             },
           ],
@@ -1890,6 +2113,20 @@ export const translations: Record<Language, TranslationDictionary> = {
         orderStatus: "حالة الطلب",
         paymentStatus: "حالة الدفع",
         items: "المنتجات",
+        contactDetails: "بيانات التواصل",
+        customerName: "اسم العميل",
+        customerEmail: "بريد العميل",
+        customerPhone: "هاتف العميل",
+        deliveryDetails: "تفاصيل التوصيل",
+        deliveryArea: "منطقة التوصيل",
+        deliveryCity: "المدينة أو المنطقة",
+        deliveryAddress: "عنوان التوصيل",
+        deliveryNotes: "ملاحظات التوصيل",
+        deliveryPrice: "سعر التوصيل",
+        pickupAgreement: "موافقة الاستلام",
+        yes: "نعم",
+        notProvided: "غير متوفر",
+        notRequired: "غير مطلوب",
         adminNote: "ملاحظة الإدارة",
         adminNotePlaceholder: "ملاحظة خاصة بالإدارة فقط...",
         saveNote: "حفظ الملاحظة",

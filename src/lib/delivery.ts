@@ -9,51 +9,33 @@ export type DeliveryAreaKey =
 
 export type DeliveryArea = {
   key: DeliveryAreaKey;
-  labelEn: string;
-  labelAr: string;
   priceNis: number;
   requiresCustomerAgreement: boolean;
-  noteEn?: string;
-  noteAr?: string;
 };
 
 export const DELIVERY_AREAS: DeliveryArea[] = [
   {
     key: "nablus_receive_point",
-    labelEn: "Nablus receive point",
-    labelAr: "نقطة استلام في نابلس",
     priceNis: 0,
     requiresCustomerAgreement: true,
-    noteEn:
-      "Free receive/pickup option in Nablus. The customer must agree or coordinate with the store owner on WhatsApp before receiving the order.",
-    noteAr:
-      "خيار استلام مجاني في نابلس. يجب على الزبون الموافقة أو التنسيق مع صاحب المتجر عبر واتساب قبل استلام الطلب.",
   },
   {
     key: "west_bank_cities",
-    labelEn: "West Bank cities",
-    labelAr: "مدن الضفة الغربية",
     priceNis: 20,
     requiresCustomerAgreement: false,
   },
   {
     key: "jerusalem",
-    labelEn: "Jerusalem",
-    labelAr: "القدس",
     priceNis: 30,
     requiresCustomerAgreement: false,
   },
   {
     key: "lands_48",
-    labelEn: "48 lands",
-    labelAr: "أراضي 48",
     priceNis: 70,
     requiresCustomerAgreement: false,
   },
   {
     key: "west_jerusalem_area",
-    labelEn: "West Jerusalem, Ein Rafa, Ein Naqouba, Abu Ghosh",
-    labelAr: "غرب القدس، عين رافا، عين نقوبا، أبو غوش",
     priceNis: 45,
     requiresCustomerAgreement: false,
   },
@@ -73,10 +55,13 @@ export function getDeliveryPriceNis(key: string): number | null {
   return getDeliveryAreaByKey(key)?.priceNis ?? null;
 }
 
-export function formatDeliveryPriceNis(priceNis: number): string {
+export function formatDeliveryPriceNis(
+  priceNis: number,
+  labels: { free: string; currency: string },
+): string {
   if (priceNis === 0) {
-    return "Free";
+    return labels.free;
   }
 
-  return `${priceNis} ${DELIVERY_CURRENCY}`;
+  return `${priceNis} ${labels.currency}`;
 }

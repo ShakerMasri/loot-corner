@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { useAppPreferences } from "~/components/providers/AppPreferencesProvider";
 import { OptimizedImage } from "~/components/ui/OptimizedImage";
+import { formatDeliveryPriceNis, type DeliveryAreaKey } from "~/lib/delivery";
 
 type OrderStatus =
   | "PENDING"
@@ -31,6 +32,15 @@ type AdminOrder = {
   paymentStatus: PaymentStatus;
   totalAmount: string;
   adminNote: string | null;
+  customerNameAtPurchase: string | null;
+  customerEmailAtPurchase: string | null;
+  customerPhoneAtPurchase: string | null;
+  deliveryAreaKey: DeliveryAreaKey | null;
+  deliveryPrice: string;
+  deliveryCity: string | null;
+  deliveryAddress: string | null;
+  deliveryNotes: string | null;
+  pickupAgreementAccepted: boolean;
   createdAt: string;
   updatedAt: string;
   user: {
@@ -77,8 +87,8 @@ const paymentStatusStyles: Record<PaymentStatus, string> = {
   PAID: "bg-green-50 text-green-800 dark:bg-green-950 dark:text-green-200",
 };
 
-function formatPrice(price: string | number) {
-  return `$${Number(price).toFixed(2)}`;
+function formatPrice(price: string | number, currency: string) {
+  return `${Number(price).toFixed(2)} ${currency}`;
 }
 
 function formatDate(date: string, language: "en" | "ar") {
@@ -137,6 +147,17 @@ export function AdminOrdersClient() {
     return t.admin.orders.unpaidNotice
       .replace("{count}", String(count))
       .replace("{plural}", count === 1 ? "" : "s");
+  }
+
+  function getDeliveryAreaLabel(deliveryAreaKey: DeliveryAreaKey | null) {
+    if (!deliveryAreaKey) {
+      return t.admin.orders.notProvided;
+    }
+
+    return (
+      t.delivery.areas[deliveryAreaKey]?.label ??
+      formatFallbackLabel(deliveryAreaKey)
+    );
   }
 
   async function loadOrders() {
@@ -377,7 +398,7 @@ export function AdminOrdersClient() {
             {t.admin.orders.revenueExcludingCancelled}
           </p>
           <p className="mt-2 text-2xl font-black text-zinc-950 dark:text-white">
-            {formatPrice(totalRevenue)}
+            {formatPrice(totalRevenue, t.delivery.currency)}
           </p>
         </div>
       </div>
@@ -433,9 +454,11 @@ export function AdminOrdersClient() {
                       <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
                         {t.admin.orders.customer}:{" "}
                         <span className="font-semibold text-zinc-950 dark:text-white">
-                          {order.user.name ?? t.admin.orders.unnamedCustomer}
+                          {order.customerNameAtPurchase ??
+                            order.user.name ??
+                            t.admin.orders.unnamedCustomer}
                         </span>{" "}
-                        · {order.user.email}
+                        · {order.customerEmailAtPurchase ?? order.user.email}
                       </p>
                     </div>
 
@@ -454,13 +477,25 @@ export function AdminOrdersClient() {
                     </div>
                   </div>
 
-                  <div className="mt-5 grid gap-3 text-sm md:grid-cols-3">
+                  <div className="mt-5 grid gap-3 text-sm md:grid-cols-2 xl:grid-cols-4">
                     <div className="rounded-2xl bg-zinc-50 p-4 dark:bg-zinc-950">
                       <p className="text-zinc-500 dark:text-zinc-400">
                         {t.admin.orders.total}
                       </p>
                       <p className="mt-1 font-black text-zinc-950 dark:text-white">
-                        {formatPrice(order.totalAmount)}
+                        {formatPrice(order.totalAmount, t.delivery.currency)}
+                      </p>
+                    </div>
+
+                    <div className="rounded-2xl bg-zinc-50 p-4 dark:bg-zinc-950">
+                      <p className="text-zinc-500 dark:text-zinc-400">
+                        {t.admin.orders.deliveryPrice}
+                      </p>
+                      <p className="mt-1 font-semibold text-zinc-950 dark:text-white">
+                        {formatDeliveryPriceNis(Number(order.deliveryPrice), {
+                          free: t.delivery.free,
+                          currency: t.delivery.currency,
+                        })}
                       </p>
                     </div>
 
@@ -565,12 +600,18 @@ export function AdminOrdersClient() {
 
                               <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
                                 {item.quantity} ×{" "}
-                                {formatPrice(item.priceAtPurchase)}
+                                {formatPrice(
+                                  item.priceAtPurchase,
+                                  t.delivery.currency,
+                                )}
                               </p>
                             </div>
 
                             <p className="font-black text-zinc-950 dark:text-white">
-                              {formatPrice(item.subtotalAmount)}
+                              {formatPrice(
+                                item.subtotalAmount,
+                                t.delivery.currency,
+                              )}
                             </p>
                           </div>
                         );
@@ -578,42 +619,142 @@ export function AdminOrdersClient() {
                     </div>
                   </div>
 
-                  <div>
-                    <label
-                      htmlFor={`note-${order.id}`}
-                      className="text-sm font-bold tracking-wide text-zinc-500 uppercase dark:text-zinc-400"
-                    >
-                      {t.admin.orders.adminNote}
-                    </label>
+                  <div className="space-y-4">
+                    <section className="rounded-2xl border border-zinc-200 bg-zinc-50 p-4 text-sm dark:border-zinc-800 dark:bg-zinc-950">
+                      <h3 className="font-bold text-zinc-950 dark:text-white">
+                        {t.admin.orders.contactDetails}
+                      </h3>
 
-                    <textarea
-                      id={`note-${order.id}`}
-                      value={noteDrafts[order.id] ?? ""}
-                      onChange={(event) =>
-                        setNoteDrafts((current) => ({
-                          ...current,
-                          [order.id]: event.target.value,
-                        }))
-                      }
-                      placeholder={t.admin.orders.adminNotePlaceholder}
-                      rows={6}
-                      className="mt-3 w-full resize-none rounded-2xl border border-zinc-300 bg-white px-4 py-3 text-sm text-zinc-950 transition outline-none placeholder:text-zinc-400 focus:border-orange-600 focus:ring-4 focus:ring-orange-100 dark:border-zinc-700 dark:bg-zinc-950 dark:text-white dark:focus:border-orange-400 dark:focus:ring-orange-950"
-                    />
+                      <dl className="mt-3 space-y-3">
+                        <div>
+                          <dt className="text-zinc-500 dark:text-zinc-400">
+                            {t.admin.orders.customerName}
+                          </dt>
+                          <dd className="mt-1 font-semibold text-zinc-950 dark:text-white">
+                            {order.customerNameAtPurchase ??
+                              order.user.name ??
+                              t.admin.orders.notProvided}
+                          </dd>
+                        </div>
 
-                    <button
-                      type="button"
-                      disabled={isUpdating}
-                      onClick={() => void saveAdminNote(order.id)}
-                      className="mt-3 w-full rounded-full bg-zinc-950 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-white dark:text-zinc-950 dark:hover:bg-zinc-200"
-                    >
-                      {isUpdating
-                        ? t.admin.orders.saving
-                        : t.admin.orders.saveNote}
-                    </button>
+                        <div>
+                          <dt className="text-zinc-500 dark:text-zinc-400">
+                            {t.admin.orders.customerEmail}
+                          </dt>
+                          <dd className="mt-1 font-semibold break-words text-zinc-950 dark:text-white">
+                            {order.customerEmailAtPurchase ?? order.user.email}
+                          </dd>
+                        </div>
 
-                    <p className="mt-3 text-xs leading-5 text-zinc-500 dark:text-zinc-400">
-                      {t.admin.orders.noteWarning}
-                    </p>
+                        <div>
+                          <dt className="text-zinc-500 dark:text-zinc-400">
+                            {t.admin.orders.customerPhone}
+                          </dt>
+                          <dd className="mt-1 font-semibold text-zinc-950 dark:text-white">
+                            {order.customerPhoneAtPurchase ??
+                              t.admin.orders.notProvided}
+                          </dd>
+                        </div>
+                      </dl>
+                    </section>
+
+                    <section className="rounded-2xl border border-zinc-200 bg-zinc-50 p-4 text-sm dark:border-zinc-800 dark:bg-zinc-950">
+                      <h3 className="font-bold text-zinc-950 dark:text-white">
+                        {t.admin.orders.deliveryDetails}
+                      </h3>
+
+                      <dl className="mt-3 space-y-3">
+                        <div>
+                          <dt className="text-zinc-500 dark:text-zinc-400">
+                            {t.admin.orders.deliveryArea}
+                          </dt>
+                          <dd className="mt-1 font-semibold text-zinc-950 dark:text-white">
+                            {getDeliveryAreaLabel(order.deliveryAreaKey)}
+                          </dd>
+                        </div>
+
+                        <div>
+                          <dt className="text-zinc-500 dark:text-zinc-400">
+                            {t.admin.orders.deliveryCity}
+                          </dt>
+                          <dd className="mt-1 font-semibold text-zinc-950 dark:text-white">
+                            {order.deliveryCity ?? t.admin.orders.notProvided}
+                          </dd>
+                        </div>
+
+                        <div>
+                          <dt className="text-zinc-500 dark:text-zinc-400">
+                            {t.admin.orders.deliveryAddress}
+                          </dt>
+                          <dd className="mt-1 font-semibold whitespace-pre-wrap text-zinc-950 dark:text-white">
+                            {order.deliveryAddress ??
+                              t.admin.orders.notProvided}
+                          </dd>
+                        </div>
+
+                        <div>
+                          <dt className="text-zinc-500 dark:text-zinc-400">
+                            {t.admin.orders.pickupAgreement}
+                          </dt>
+                          <dd className="mt-1 font-semibold text-zinc-950 dark:text-white">
+                            {order.deliveryAreaKey === "nablus_receive_point"
+                              ? order.pickupAgreementAccepted
+                                ? t.admin.orders.yes
+                                : t.admin.orders.notProvided
+                              : t.admin.orders.notRequired}
+                          </dd>
+                        </div>
+
+                        {order.deliveryNotes ? (
+                          <div>
+                            <dt className="text-zinc-500 dark:text-zinc-400">
+                              {t.admin.orders.deliveryNotes}
+                            </dt>
+                            <dd className="mt-1 font-semibold whitespace-pre-wrap text-zinc-950 dark:text-white">
+                              {order.deliveryNotes}
+                            </dd>
+                          </div>
+                        ) : null}
+                      </dl>
+                    </section>
+
+                    <div>
+                      <label
+                        htmlFor={`note-${order.id}`}
+                        className="text-sm font-bold tracking-wide text-zinc-500 uppercase dark:text-zinc-400"
+                      >
+                        {t.admin.orders.adminNote}
+                      </label>
+
+                      <textarea
+                        id={`note-${order.id}`}
+                        value={noteDrafts[order.id] ?? ""}
+                        onChange={(event) =>
+                          setNoteDrafts((current) => ({
+                            ...current,
+                            [order.id]: event.target.value,
+                          }))
+                        }
+                        placeholder={t.admin.orders.adminNotePlaceholder}
+                        rows={6}
+                        className="mt-3 w-full resize-none rounded-2xl border border-zinc-300 bg-white px-4 py-3 text-sm text-zinc-950 transition outline-none placeholder:text-zinc-400 focus:border-orange-600 focus:ring-4 focus:ring-orange-100 dark:border-zinc-700 dark:bg-zinc-950 dark:text-white dark:focus:border-orange-400 dark:focus:ring-orange-950"
+                      />
+
+                      <button
+                        type="button"
+                        disabled={isUpdating}
+                        onClick={() => void saveAdminNote(order.id)}
+                        className="mt-3 w-full rounded-full bg-zinc-950 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-white dark:text-zinc-950 dark:hover:bg-zinc-200"
+                      >
+                        {isUpdating
+                          ? t.admin.orders.saving
+                          : t.admin.orders.saveNote}
+                      </button>
+
+                      <p className="mt-3 text-xs leading-5 text-zinc-500 dark:text-zinc-400">
+                        {t.admin.orders.noteWarning}
+                      </p>
+                    </div>
                   </div>
                 </div>
               </article>

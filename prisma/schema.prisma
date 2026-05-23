@@ -163,6 +163,13 @@ model Order {
   customerEmailAtPurchase String?
   customerPhoneAtPurchase String?
 
+  deliveryAreaKey         String?
+  deliveryPrice           Decimal @default(0) @db.Decimal(10, 2)
+  deliveryCity            String?
+  deliveryAddress         String?
+  deliveryNotes           String?
+  pickupAgreementAccepted Boolean @default(false)
+
   userId String
   user   User   @relation(fields: [userId], references: [id])
 

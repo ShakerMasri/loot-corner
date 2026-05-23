@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { useAppPreferences } from "~/components/providers/AppPreferencesProvider";
 import { OptimizedImage } from "~/components/ui/OptimizedImage";
+import { formatDeliveryPriceNis, type DeliveryAreaKey } from "~/lib/delivery";
 
 type OrderItem = {
   id: string;
@@ -21,6 +22,12 @@ type Order = {
   paymentMethod: string;
   paymentStatus: string;
   totalAmount: string;
+  deliveryAreaKey: DeliveryAreaKey | null;
+  deliveryPrice: string;
+  deliveryCity: string | null;
+  deliveryAddress: string | null;
+  deliveryNotes: string | null;
+  pickupAgreementAccepted: boolean;
   createdAt: string;
   items: OrderItem[];
 };
@@ -46,8 +53,8 @@ const paymentStatusStyles: Record<string, string> = {
   PAID: "bg-green-50 text-green-800 dark:bg-green-950 dark:text-green-200",
 };
 
-function formatPrice(price: string | number) {
-  return `$${Number(price).toFixed(2)}`;
+function formatPrice(price: string | number, currency: string) {
+  return `${Number(price).toFixed(2)} ${currency}`;
 }
 
 function formatDate(date: string, language: "en" | "ar") {
@@ -104,6 +111,17 @@ export function OrdersClient() {
     return (
       t.orders.paymentStatuses[paymentStatus] ??
       formatFallbackLabel(paymentStatus)
+    );
+  }
+
+  function getDeliveryAreaLabel(deliveryAreaKey: DeliveryAreaKey | null) {
+    if (!deliveryAreaKey) {
+      return t.orders.notProvided;
+    }
+
+    return (
+      t.delivery.areas[deliveryAreaKey]?.label ??
+      formatFallbackLabel(deliveryAreaKey)
     );
   }
 
@@ -278,7 +296,7 @@ export function OrdersClient() {
             {t.orders.totalSpent}
           </p>
           <p className="mt-2 text-2xl font-black text-zinc-950 dark:text-white">
-            {formatPrice(totalSpent)}
+            {formatPrice(totalSpent, t.delivery.currency)}
           </p>
         </div>
       </div>
@@ -335,13 +353,25 @@ export function OrdersClient() {
                   </div>
                 </div>
 
-                <div className="mt-5 grid gap-3 text-sm sm:grid-cols-3">
+                <div className="mt-5 grid gap-3 text-sm sm:grid-cols-2 lg:grid-cols-4">
                   <div className="rounded-2xl bg-zinc-50 p-4 dark:bg-zinc-950">
                     <p className="text-zinc-500 dark:text-zinc-400">
                       {t.orders.total}
                     </p>
                     <p className="mt-1 font-black text-zinc-950 dark:text-white">
-                      {formatPrice(order.totalAmount)}
+                      {formatPrice(order.totalAmount, t.delivery.currency)}
+                    </p>
+                  </div>
+
+                  <div className="rounded-2xl bg-zinc-50 p-4 dark:bg-zinc-950">
+                    <p className="text-zinc-500 dark:text-zinc-400">
+                      {t.orders.deliveryPrice}
+                    </p>
+                    <p className="mt-1 font-semibold text-zinc-950 dark:text-white">
+                      {formatDeliveryPriceNis(Number(order.deliveryPrice), {
+                        free: t.delivery.free,
+                        currency: t.delivery.currency,
+                      })}
                     </p>
                   </div>
 
@@ -365,6 +395,65 @@ export function OrdersClient() {
                       )}
                     </p>
                   </div>
+                </div>
+
+                <div className="mt-4 rounded-2xl border border-zinc-200 bg-zinc-50 p-4 text-sm dark:border-zinc-800 dark:bg-zinc-950">
+                  <h3 className="font-bold text-zinc-950 dark:text-white">
+                    {t.orders.deliveryDetails}
+                  </h3>
+
+                  <dl className="mt-3 grid gap-3 sm:grid-cols-2">
+                    <div>
+                      <dt className="text-zinc-500 dark:text-zinc-400">
+                        {t.orders.deliveryArea}
+                      </dt>
+                      <dd className="mt-1 font-semibold text-zinc-950 dark:text-white">
+                        {getDeliveryAreaLabel(order.deliveryAreaKey)}
+                      </dd>
+                    </div>
+
+                    <div>
+                      <dt className="text-zinc-500 dark:text-zinc-400">
+                        {t.orders.deliveryCity}
+                      </dt>
+                      <dd className="mt-1 font-semibold text-zinc-950 dark:text-white">
+                        {order.deliveryCity ?? t.orders.notProvided}
+                      </dd>
+                    </div>
+
+                    <div>
+                      <dt className="text-zinc-500 dark:text-zinc-400">
+                        {t.orders.deliveryAddress}
+                      </dt>
+                      <dd className="mt-1 font-semibold text-zinc-950 dark:text-white">
+                        {order.deliveryAddress ?? t.orders.notProvided}
+                      </dd>
+                    </div>
+
+                    <div>
+                      <dt className="text-zinc-500 dark:text-zinc-400">
+                        {t.orders.pickupAgreement}
+                      </dt>
+                      <dd className="mt-1 font-semibold text-zinc-950 dark:text-white">
+                        {order.deliveryAreaKey === "nablus_receive_point"
+                          ? order.pickupAgreementAccepted
+                            ? t.orders.yes
+                            : t.orders.notProvided
+                          : t.orders.notRequired}
+                      </dd>
+                    </div>
+
+                    {order.deliveryNotes ? (
+                      <div className="sm:col-span-2">
+                        <dt className="text-zinc-500 dark:text-zinc-400">
+                          {t.orders.deliveryNotes}
+                        </dt>
+                        <dd className="mt-1 font-semibold whitespace-pre-wrap text-zinc-950 dark:text-white">
+                          {order.deliveryNotes}
+                        </dd>
+                      </div>
+                    ) : null}
+                  </dl>
                 </div>
               </div>
 
@@ -405,7 +494,10 @@ export function OrdersClient() {
 
                         <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
                           {t.orders.quantity}: {item.quantity} ×{" "}
-                          {formatPrice(item.priceAtPurchase)}
+                          {formatPrice(
+                            item.priceAtPurchase,
+                            t.delivery.currency,
+                          )}
                         </p>
                       </div>
 
@@ -414,7 +506,10 @@ export function OrdersClient() {
                           {t.orders.subtotal}
                         </p>
                         <p className="font-black text-zinc-950 dark:text-white">
-                          {formatPrice(item.subtotalAmount)}
+                          {formatPrice(
+                            item.subtotalAmount,
+                            t.delivery.currency,
+                          )}
                         </p>
                       </div>
                     </div>
