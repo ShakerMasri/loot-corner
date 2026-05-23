@@ -12,17 +12,51 @@ const validCuid = "clh1q2w3e000008l4a5b6c7d8";
 const validOrderStatus = Object.values(OrderStatus)[0]!;
 
 describe("admin order validations", () => {
-  it("accepts valid admin orders query", () => {
+  it("accepts valid admin orders query filters", () => {
     const result = adminOrdersQuerySchema.safeParse({
       status: validOrderStatus,
+      paymentStatus: PaymentStatus.UNPAID,
+      q: "  059  ",
+      deliveryAreaKey: "nablus_city",
+      page: "2",
+      limit: "10",
+      includeArchived: "true",
     });
 
     expect(result.success).toBe(true);
+
+    if (result.success) {
+      expect(result.data.q).toBe("059");
+      expect(result.data.page).toBe(2);
+      expect(result.data.limit).toBe(10);
+      expect(result.data.includeArchived).toBe(true);
+    }
+  });
+
+  it("defaults admin orders pagination and archived filter", () => {
+    const result = adminOrdersQuerySchema.safeParse({});
+
+    expect(result.success).toBe(true);
+
+    if (result.success) {
+      expect(result.data.page).toBe(1);
+      expect(result.data.limit).toBe(20);
+      expect(result.data.includeArchived).toBe(false);
+    }
   });
 
   it("rejects invalid admin orders status", () => {
     const result = adminOrdersQuerySchema.safeParse({
       status: "NOT_REAL",
+    });
+
+    expect(result.success).toBe(false);
+  });
+
+  it("rejects invalid pagination", () => {
+    const result = adminOrdersQuerySchema.safeParse({
+      page: "0",
+      limit: "500",
     });
 
     expect(result.success).toBe(false);
