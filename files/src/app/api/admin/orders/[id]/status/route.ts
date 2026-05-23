@@ -2,13 +2,13 @@ import { OrderStatus } from "@prisma/client";
 import type { Prisma } from "@prisma/client";
 import { NextResponse } from "next/server";
 import { requireAdmin } from "~/lib/admin";
-import { validateSameOriginRequest } from "~/lib/csrf";
 import { prisma } from "~/lib/prisma";
-import { rateLimit } from "~/lib/rate-limit";
 import {
   adminOrderParamsSchema,
   updateAdminOrderStatusSchema,
 } from "~/server/validations/admin-order";
+import { rateLimit } from "~/lib/rate-limit";
+import { validateSameOriginRequest } from "~/lib/csrf";
 
 type RouteContext = {
   params: Promise<{
@@ -102,7 +102,6 @@ export async function PATCH(request: Request, { params }: RouteContext) {
         select: {
           id: true,
           status: true,
-          stockDeductedAt: true,
           items: {
             select: {
               productId: true,
@@ -133,87 +132,36 @@ export async function PATCH(request: Request, { params }: RouteContext) {
         return currentOrder;
       }
 
-      const isAdminConfirmation =
-        order.status === OrderStatus.PENDING &&
-        nextStatus === OrderStatus.PROCESSING;
+      const updateResult = await tx.order.updateMany({
+        where: {
+          id: order.id,
+          status: order.status,
+        },
+        data: {
+          status: nextStatus,
+        },
+      });
 
-      if (isAdminConfirmation && !order.stockDeductedAt) {
+      if (updateResult.count !== 1) {
+        throw new Error("ORDER_STATUS_CHANGED");
+      }
+
+      if (nextStatus === OrderStatus.CANCELLED) {
         for (const item of order.items) {
           if (!item.productId) {
-            throw new Error("PRODUCT_LINK_MISSING");
+            continue;
           }
 
-          const updateProductResult = await tx.product.updateMany({
+          await tx.product.updateMany({
             where: {
               id: item.productId,
-              isArchived: false,
-              stock: {
-                gte: item.quantity,
-              },
             },
             data: {
               stock: {
-                decrement: item.quantity,
+                increment: item.quantity,
               },
             },
           });
-
-          if (updateProductResult.count !== 1) {
-            throw new Error("INSUFFICIENT_STOCK");
-          }
-        }
-
-        const updateOrderResult = await tx.order.updateMany({
-          where: {
-            id: order.id,
-            status: order.status,
-            stockDeductedAt: null,
-          },
-          data: {
-            status: nextStatus,
-            stockDeductedAt: new Date(),
-          },
-        });
-
-        if (updateOrderResult.count !== 1) {
-          throw new Error("ORDER_STATUS_CHANGED");
-        }
-      } else {
-        const updateData: Prisma.OrderUpdateManyMutationInput = {
-          status: nextStatus,
-        };
-
-        if (nextStatus === OrderStatus.CANCELLED && order.stockDeductedAt) {
-          for (const item of order.items) {
-            if (!item.productId) {
-              continue;
-            }
-
-            await tx.product.updateMany({
-              where: {
-                id: item.productId,
-              },
-              data: {
-                stock: {
-                  increment: item.quantity,
-                },
-              },
-            });
-          }
-
-          updateData.stockDeductedAt = null;
-        }
-
-        const updateOrderResult = await tx.order.updateMany({
-          where: {
-            id: order.id,
-            status: order.status,
-          },
-          data: updateData,
-        });
-
-        if (updateOrderResult.count !== 1) {
-          throw new Error("ORDER_STATUS_CHANGED");
         }
       }
 
@@ -254,26 +202,6 @@ export async function PATCH(request: Request, { params }: RouteContext) {
         {
           message:
             "Order was updated by another request. Refresh and try again.",
-        },
-        { status: 409 },
-      );
-    }
-
-    if (error instanceof Error && error.message === "PRODUCT_LINK_MISSING") {
-      return NextResponse.json(
-        {
-          message:
-            "One or more order items are no longer linked to products. Cancel this order or handle it manually.",
-        },
-        { status: 409 },
-      );
-    }
-
-    if (error instanceof Error && error.message === "INSUFFICIENT_STOCK") {
-      return NextResponse.json(
-        {
-          message:
-            "One or more products are unavailable or do not have enough stock to confirm this order.",
         },
         { status: 409 },
       );

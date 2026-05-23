@@ -434,9 +434,6 @@ export type TranslationDictionary = {
       unnamedCustomer: string;
       total: string;
       orderStatus: string;
-      confirmOrder: string;
-      confirmingOrder: string;
-      confirmOrderHelp: string;
       paymentStatus: string;
       items: string;
       contactDetails: string;
@@ -670,7 +667,7 @@ export const translations: Record<Language, TranslationDictionary> = {
         "Add products to your cart first, then come back here to place your order.",
       orderPlacedTitle: "Order placed successfully",
       orderPlacedDescription:
-        "Your order was received. The store owner will confirm it with you by WhatsApp or phone before processing.",
+        "Your order was created. You can view its status from your orders page.",
       orderId: "Order ID",
       total: "Total",
       payment: "Payment",
@@ -696,7 +693,7 @@ export const translations: Record<Language, TranslationDictionary> = {
       placingOrder: "Placing order...",
       orderPlacedButton: "Order placed",
       stockServerNote:
-        "Stock and prices are checked on the server. Stock is only deducted after the store owner confirms the order.",
+        "Stock and prices are checked again on the server when the order is placed. This prevents incorrect totals or unavailable products from being accepted.",
       failedToLoad: "Failed to load cart.",
       failedToConnect: "Failed to connect to the server.",
       failedToUpdate: "Failed to update item.",
@@ -1275,10 +1272,6 @@ export const translations: Record<Language, TranslationDictionary> = {
         unnamedCustomer: "Unnamed customer",
         total: "Total",
         orderStatus: "Order status",
-        confirmOrder: "Confirm order",
-        confirmingOrder: "Confirming...",
-        confirmOrderHelp:
-          "Confirm only after contacting the customer. This will deduct stock and move the order to processing.",
         paymentStatus: "Payment status",
         items: "Items",
         contactDetails: "Contact details",
@@ -1519,7 +1512,7 @@ export const translations: Record<Language, TranslationDictionary> = {
       emptyDescription: "أضف منتجات إلى السلة أولاً، ثم ارجع هنا لإنشاء الطلب.",
       orderPlacedTitle: "تم إنشاء الطلب بنجاح",
       orderPlacedDescription:
-        "تم استلام طلبك. سيتواصل معك صاحب المتجر عبر واتساب أو الهاتف لتأكيد الطلب قبل معالجته.",
+        "تم إنشاء طلبك. يمكنك متابعة حالته من صفحة الطلبات.",
       orderId: "رقم الطلب",
       total: "المجموع",
       payment: "الدفع",
@@ -1545,7 +1538,7 @@ export const translations: Record<Language, TranslationDictionary> = {
       placingOrder: "جار إنشاء الطلب...",
       orderPlacedButton: "تم إنشاء الطلب",
       stockServerNote:
-        "يتم فحص المخزون والأسعار من الخادم. يتم خصم المخزون فقط بعد تأكيد صاحب المتجر للطلب.",
+        "يتم فحص المخزون والأسعار مرة أخرى من الخادم عند إنشاء الطلب، لمنع قبول مجموع غير صحيح أو منتجات غير متوفرة.",
       failedToLoad: "فشل تحميل السلة.",
       failedToConnect: "فشل الاتصال بالخادم.",
       failedToUpdate: "فشل تحديث المنتج.",
@@ -2118,10 +2111,6 @@ export const translations: Record<Language, TranslationDictionary> = {
         unnamedCustomer: "عميل بدون اسم",
         total: "المجموع",
         orderStatus: "حالة الطلب",
-        confirmOrder: "تأكيد الطلب",
-        confirmingOrder: "جار التأكيد...",
-        confirmOrderHelp:
-          "أكد الطلب فقط بعد التواصل مع العميل. سيؤدي هذا إلى خصم المخزون ونقل الطلب إلى قيد المعالجة.",
         paymentStatus: "حالة الدفع",
         items: "المنتجات",
         contactDetails: "بيانات التواصل",

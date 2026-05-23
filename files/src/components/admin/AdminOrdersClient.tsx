@@ -61,15 +61,15 @@ type UpdateResponse = {
   message?: string;
 };
 
-const paymentStatuses: PaymentStatus[] = ["UNPAID", "PAID"];
+const orderStatuses: OrderStatus[] = [
+  "PENDING",
+  "PROCESSING",
+  "SHIPPED",
+  "DELIVERED",
+  "CANCELLED",
+];
 
-const statusOptionsByCurrentStatus: Record<OrderStatus, OrderStatus[]> = {
-  PENDING: ["PENDING", "CANCELLED"],
-  PROCESSING: ["PROCESSING", "SHIPPED", "CANCELLED"],
-  SHIPPED: ["SHIPPED", "DELIVERED"],
-  DELIVERED: ["DELIVERED"],
-  CANCELLED: ["CANCELLED"],
-};
+const paymentStatuses: PaymentStatus[] = ["UNPAID", "PAID"];
 
 const statusStyles: Record<OrderStatus, string> = {
   PENDING:
@@ -519,35 +519,12 @@ export function AdminOrdersClient() {
                         }
                         className="mt-2 w-full rounded-xl border border-zinc-300 bg-white px-3 py-2 text-sm font-semibold text-zinc-950 outline-none focus:border-orange-600 focus:ring-4 focus:ring-orange-100 disabled:cursor-not-allowed disabled:opacity-60 dark:border-zinc-700 dark:bg-zinc-900 dark:text-white dark:focus:border-orange-400 dark:focus:ring-orange-950"
                       >
-                        {statusOptionsByCurrentStatus[order.status].map(
-                          (status) => (
-                            <option key={status} value={status}>
-                              {getOrderStatusLabel(status)}
-                            </option>
-                          ),
-                        )}
+                        {orderStatuses.map((status) => (
+                          <option key={status} value={status}>
+                            {getOrderStatusLabel(status)}
+                          </option>
+                        ))}
                       </select>
-
-                      {order.status === "PENDING" ? (
-                        <div className="mt-3 space-y-2">
-                          <button
-                            type="button"
-                            disabled={isUpdating}
-                            onClick={() =>
-                              void updateOrderStatus(order.id, "PROCESSING")
-                            }
-                            className="w-full rounded-full bg-green-700 px-4 py-2 text-sm font-semibold text-white transition hover:bg-green-800 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-green-500 dark:text-zinc-950 dark:hover:bg-green-400"
-                          >
-                            {isUpdating
-                              ? t.admin.orders.confirmingOrder
-                              : t.admin.orders.confirmOrder}
-                          </button>
-
-                          <p className="text-xs leading-5 text-zinc-500 dark:text-zinc-400">
-                            {t.admin.orders.confirmOrderHelp}
-                          </p>
-                        </div>
-                      ) : null}
                     </div>
 
                     <div className="rounded-2xl bg-zinc-50 p-4 dark:bg-zinc-950">
