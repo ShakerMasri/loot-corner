@@ -158,7 +158,6 @@ model Order {
   paymentStatus PaymentStatus @default(UNPAID)
 
   idempotencyKey          String?
-  stockDeductedAt         DateTime?
   adminNote               String?
   customerNameAtPurchase  String?
   customerEmailAtPurchase String?
@@ -214,7 +213,7 @@ model OrderItem {
 // ─── CartItem ────────────────────────────────────────────────────────────────
 // Logged-in customer cart.
 // Adding to cart does not reduce stock.
-// Stock is checked during checkout and reduced only after admin confirmation.
+// Stock is checked and reduced later during checkout.
 
 model CartItem {
   id       String @id @default(cuid())

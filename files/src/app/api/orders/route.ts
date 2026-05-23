@@ -216,6 +216,27 @@ export async function POST(request: Request) {
         }
       }
 
+      for (const item of cartItems) {
+        const updateResult = await tx.product.updateMany({
+          where: {
+            id: item.productId,
+            isArchived: false,
+            stock: {
+              gte: item.quantity,
+            },
+          },
+          data: {
+            stock: {
+              decrement: item.quantity,
+            },
+          },
+        });
+
+        if (updateResult.count !== 1) {
+          throw new Error("INSUFFICIENT_STOCK");
+        }
+      }
+
       const productsTotalAmount = cartItems.reduce((sum, item) => {
         return sum.plus(item.product.price.mul(item.quantity));
       }, new Prisma.Decimal(0));
@@ -264,8 +285,7 @@ export async function POST(request: Request) {
     });
 
     return NextResponse.json({
-      message:
-        "Order placed successfully. The store owner will confirm it by WhatsApp or phone before processing.",
+      message: "Order placed successfully.",
       order: serializeOrder(order),
     });
   } catch (error) {
@@ -327,8 +347,7 @@ export async function POST(request: Request) {
 
       if (existingOrder) {
         return NextResponse.json({
-          message:
-            "Order placed successfully. The store owner will confirm it by WhatsApp or phone before processing.",
+          message: "Order placed successfully.",
           order: serializeOrder(existingOrder),
         });
       }
