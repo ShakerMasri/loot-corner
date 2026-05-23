@@ -159,6 +159,7 @@ model Order {
 
   idempotencyKey          String?
   stockDeductedAt         DateTime?
+  adminArchivedAt         DateTime?
   adminNote               String?
   customerNameAtPurchase  String?
   customerEmailAtPurchase String?
@@ -183,6 +184,7 @@ model Order {
   @@index([userId])
   @@index([status])
   @@index([paymentStatus])
+  @@index([adminArchivedAt])
 }
 
 // ─── OrderItem ────────────────────────────────────────────────────────────────

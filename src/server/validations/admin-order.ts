@@ -1,8 +1,47 @@
 import { OrderStatus, PaymentStatus } from "@prisma/client";
 import { z } from "zod";
 
+const positiveIntegerFromQuery = (fallback: number, max: number) =>
+  z
+    .preprocess((value) => {
+      if (value === undefined || value === null || value === "") {
+        return fallback;
+      }
+
+      return Number(value);
+    }, z.number().int().min(1).max(max))
+    .default(fallback);
+
+const booleanFromQuery = z
+  .preprocess((value) => {
+    if (value === undefined || value === null || value === "") {
+      return false;
+    }
+
+    if (value === "true" || value === true) {
+      return true;
+    }
+
+    if (value === "false" || value === false) {
+      return false;
+    }
+
+    return value;
+  }, z.boolean())
+  .default(false);
+
 export const adminOrdersQuerySchema = z.object({
   status: z.nativeEnum(OrderStatus).optional(),
+  paymentStatus: z.nativeEnum(PaymentStatus).optional(),
+  q: z.string().trim().max(100, "Search is too long.").optional(),
+  deliveryAreaKey: z
+    .string()
+    .trim()
+    .max(80, "Delivery area filter is too long.")
+    .optional(),
+  page: positiveIntegerFromQuery(1, 10_000),
+  limit: positiveIntegerFromQuery(20, 50),
+  includeArchived: booleanFromQuery,
 });
 
 export const adminOrderParamsSchema = z.object({
