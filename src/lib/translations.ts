@@ -430,7 +430,6 @@ export type TranslationDictionary = {
       allStatuses: string;
       paymentFilter: string;
       allPaymentStatuses: string;
-      includeArchived: string;
       applyFilters: string;
       clearFilters: string;
       orderCards: string;
@@ -454,12 +453,6 @@ export type TranslationDictionary = {
       paymentStatus: string;
       orderActions: string;
       markPaid: string;
-      archiveCancelledOrder: string;
-      archiving: string;
-      archiveConfirm: string;
-      archiveCancelledHelp: string;
-      archivedBadge: string;
-      archivedHelp: string;
       items: string;
       contactDetails: string;
       customerName: string;
@@ -493,8 +486,6 @@ export type TranslationDictionary = {
       failedToUpdateStatus: string;
       failedToUpdatePayment: string;
       failedToSaveNote: string;
-      failedToArchive: string;
-      archived: string;
       statuses: Record<string, string>;
       paymentStatuses: Record<string, string>;
     };
@@ -1298,7 +1289,6 @@ export const translations: Record<Language, TranslationDictionary> = {
         allStatuses: "All statuses",
         paymentFilter: "Payment",
         allPaymentStatuses: "All payments",
-        includeArchived: "Include archived",
         applyFilters: "Apply",
         clearFilters: "Clear",
         orderCards: "Order cards",
@@ -1323,14 +1313,6 @@ export const translations: Record<Language, TranslationDictionary> = {
         paymentStatus: "Payment status",
         orderActions: "Order actions",
         markPaid: "Mark as paid",
-        archiveCancelledOrder: "Archive cancelled order",
-        archiving: "Archiving...",
-        archiveConfirm: "Archive this cancelled order? It will be hidden from the normal admin list, but kept in the database.",
-        archiveCancelledHelp:
-          "This hides the cancelled order from the normal list without permanently deleting customer/order history.",
-        archivedBadge: "Archived",
-        archivedHelp:
-          "This order is archived and locked from editing. Enable archived orders in filters to find it later.",
         items: "Items",
         contactDetails: "Contact details",
         customerName: "Customer name",
@@ -1366,8 +1348,6 @@ export const translations: Record<Language, TranslationDictionary> = {
         failedToUpdateStatus: "Failed to update order status.",
         failedToUpdatePayment: "Failed to update payment status.",
         failedToSaveNote: "Failed to save admin note.",
-        failedToArchive: "Failed to archive cancelled order.",
-        archived: "Cancelled order archived successfully.",
         statuses: {
           PENDING: "Pending",
           PROCESSING: "Processing",
@@ -2171,7 +2151,6 @@ export const translations: Record<Language, TranslationDictionary> = {
         allStatuses: "كل الحالات",
         paymentFilter: "الدفع",
         allPaymentStatuses: "كل حالات الدفع",
-        includeArchived: "إظهار المؤرشفة",
         applyFilters: "تطبيق",
         clearFilters: "مسح",
         orderCards: "بطاقات الطلبات",
@@ -2196,14 +2175,6 @@ export const translations: Record<Language, TranslationDictionary> = {
         paymentStatus: "حالة الدفع",
         orderActions: "إجراءات الطلب",
         markPaid: "تعليم كمدفوع",
-        archiveCancelledOrder: "أرشفة الطلب الملغي",
-        archiving: "جار الأرشفة...",
-        archiveConfirm: "أرشفة هذا الطلب الملغي؟ سيتم إخفاؤه من قائمة الإدارة العادية مع إبقائه في قاعدة البيانات.",
-        archiveCancelledHelp:
-          "هذا يخفي الطلب الملغي من القائمة العادية بدون حذف سجل العميل أو الطلب نهائياً.",
-        archivedBadge: "مؤرشف",
-        archivedHelp:
-          "هذا الطلب مؤرشف ومغلق من التعديل. فعّل إظهار الطلبات المؤرشفة من الفلاتر للعثور عليه لاحقاً.",
         items: "المنتجات",
         contactDetails: "بيانات التواصل",
         customerName: "اسم العميل",
@@ -2239,8 +2210,6 @@ export const translations: Record<Language, TranslationDictionary> = {
         failedToUpdateStatus: "فشل تحديث حالة الطلب.",
         failedToUpdatePayment: "فشل تحديث حالة الدفع.",
         failedToSaveNote: "فشل حفظ ملاحظة الإدارة.",
-        failedToArchive: "فشل أرشفة الطلب الملغي.",
-        archived: "تمت أرشفة الطلب الملغي بنجاح.",
         statuses: {
           PENDING: "قيد الانتظار",
           PROCESSING: "قيد المعالجة",

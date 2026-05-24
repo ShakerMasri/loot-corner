@@ -12,24 +12,6 @@ const positiveIntegerFromQuery = (fallback: number, max: number) =>
     }, z.number().int().min(1).max(max))
     .default(fallback);
 
-const booleanFromQuery = z
-  .preprocess((value) => {
-    if (value === undefined || value === null || value === "") {
-      return false;
-    }
-
-    if (value === "true" || value === true) {
-      return true;
-    }
-
-    if (value === "false" || value === false) {
-      return false;
-    }
-
-    return value;
-  }, z.boolean())
-  .default(false);
-
 export const adminOrdersQuerySchema = z.object({
   status: z.nativeEnum(OrderStatus).optional(),
   paymentStatus: z.nativeEnum(PaymentStatus).optional(),
@@ -41,7 +23,6 @@ export const adminOrdersQuerySchema = z.object({
     .optional(),
   page: positiveIntegerFromQuery(1, 10_000),
   limit: positiveIntegerFromQuery(20, 50),
-  includeArchived: booleanFromQuery,
 });
 
 export const adminOrderParamsSchema = z.object({

@@ -22,7 +22,6 @@ const orderPaymentSelect = {
   totalAmount: true,
   paymentMethod: true,
   paymentStatus: true,
-  adminArchivedAt: true,
   updatedAt: true,
 } satisfies Prisma.OrderSelect;
 
@@ -33,7 +32,6 @@ type OrderPaymentResponse = Prisma.OrderGetPayload<{
 function serializeOrderPayment(order: OrderPaymentResponse) {
   return {
     ...order,
-    adminArchivedAt: order.adminArchivedAt?.toISOString() ?? null,
     totalAmount: order.totalAmount.toString(),
     updatedAt: order.updatedAt.toISOString(),
   };
@@ -87,7 +85,6 @@ export async function PATCH(request: Request, { params }: RouteContext) {
         status: true,
         paymentMethod: true,
         paymentStatus: true,
-        adminArchivedAt: true,
       },
     });
 
@@ -95,13 +92,6 @@ export async function PATCH(request: Request, { params }: RouteContext) {
       return NextResponse.json(
         { message: "Order not found." },
         { status: 404 },
-      );
-    }
-
-    if (order.adminArchivedAt) {
-      return NextResponse.json(
-        { message: "Archived orders cannot be edited." },
-        { status: 400 },
       );
     }
 

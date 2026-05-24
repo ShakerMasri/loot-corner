@@ -11,7 +11,6 @@ const adminOrderSummarySelect = {
   totalAmount: true,
   paymentMethod: true,
   paymentStatus: true,
-  adminArchivedAt: true,
   customerNameAtPurchase: true,
   customerEmailAtPurchase: true,
   customerPhoneAtPurchase: true,
@@ -46,7 +45,6 @@ function serializeAdminOrderSummary(order: AdminOrderSummary) {
     ...orderSummary,
     totalAmount: order.totalAmount.toString(),
     deliveryPrice: order.deliveryPrice.toString(),
-    adminArchivedAt: order.adminArchivedAt?.toISOString() ?? null,
     createdAt: order.createdAt.toISOString(),
     updatedAt: order.updatedAt.toISOString(),
     itemCount: _count.items,
@@ -59,10 +57,6 @@ function buildAdminOrdersWhere(
   filters: AdminOrdersQuery,
 ): Prisma.OrderWhereInput {
   const where: Prisma.OrderWhereInput = {};
-
-  if (!filters.includeArchived) {
-    where.adminArchivedAt = null;
-  }
 
   if (filters.status) {
     where.status = filters.status;
@@ -158,7 +152,6 @@ export async function GET(request: Request) {
     deliveryAreaKey: url.searchParams.get("deliveryAreaKey") ?? undefined,
     page: url.searchParams.get("page") ?? undefined,
     limit: url.searchParams.get("limit") ?? undefined,
-    includeArchived: url.searchParams.get("includeArchived") ?? undefined,
   });
 
   if (!parsed.success) {

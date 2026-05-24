@@ -42,7 +42,7 @@ describe("admin orders list route", () => {
     mocks.prisma.order.findMany.mockResolvedValue([]);
   });
 
-  it("hides archived orders by default and paginates on the server", async () => {
+  it("paginates orders on the server", async () => {
     const response = await GET(
       new Request("http://localhost:3000/api/admin/orders?page=2&limit=10"),
     );
@@ -60,9 +60,7 @@ describe("admin orders list route", () => {
       hasNextPage: false,
     });
     expect(mocks.prisma.order.count).toHaveBeenCalledWith({
-      where: {
-        adminArchivedAt: null,
-      },
+      where: {},
     });
     expect(mocks.prisma.order.findMany).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -75,7 +73,7 @@ describe("admin orders list route", () => {
   it("passes validated filters to Prisma", async () => {
     const response = await GET(
       new Request(
-        `http://localhost:3000/api/admin/orders?status=${OrderStatus.PENDING}&paymentStatus=${PaymentStatus.UNPAID}&q=059&includeArchived=true`,
+        `http://localhost:3000/api/admin/orders?status=${OrderStatus.PENDING}&paymentStatus=${PaymentStatus.UNPAID}&q=059`,
       ),
     );
 
@@ -85,11 +83,6 @@ describe("admin orders list route", () => {
         status: OrderStatus.PENDING,
         paymentStatus: PaymentStatus.UNPAID,
         OR: expect.any(Array),
-      }),
-    });
-    expect(mocks.prisma.order.count).not.toHaveBeenCalledWith({
-      where: expect.objectContaining({
-        adminArchivedAt: null,
       }),
     });
   });
