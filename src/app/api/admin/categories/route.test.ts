@@ -5,7 +5,9 @@ const mocks = vi.hoisted(() => ({
   rateLimit: vi.fn(),
   validateSameOriginRequest: vi.fn(),
   prisma: {
+    $transaction: vi.fn(),
     category: {
+      count: vi.fn(),
       create: vi.fn(),
       findMany: vi.fn(),
     },
@@ -41,6 +43,10 @@ function createRequest(body: unknown) {
   });
 }
 
+function createGetRequest(query = "") {
+  return new Request(`http://localhost:3000/api/admin/categories${query}`);
+}
+
 describe("admin category collection route", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -60,7 +66,8 @@ describe("admin category collection route", () => {
     mocks.validateSameOriginRequest.mockReturnValue(null);
   });
 
-  it("loads categories for admins", async () => {
+  it("loads filtered categories for admins", async () => {
+    mocks.prisma.category.count.mockResolvedValue(1);
     mocks.prisma.category.findMany.mockResolvedValue([
       {
         id: "category-1",
@@ -71,15 +78,40 @@ describe("admin category collection route", () => {
         },
       },
     ]);
+    mocks.prisma.$transaction.mockImplementation(async (operations) =>
+      Promise.all(operations),
+    );
 
-    const response = await GET();
+    const response = await GET(
+      createGetRequest("?q=fig&usage=with_products&page=1&limit=10"),
+    );
     const body = (await response.json()) as {
       categories: Array<{ slug: string; _count: { products: number } }>;
+      pagination: { total: number; page: number; limit: number };
     };
 
     expect(response.status).toBe(200);
     expect(body.categories[0]?.slug).toBe("figures");
     expect(body.categories[0]?._count.products).toBe(2);
+    expect(body.pagination.total).toBe(1);
+    expect(mocks.prisma.category.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        skip: 0,
+        take: 10,
+        where: expect.objectContaining({
+          products: { some: {} },
+        }),
+      }),
+    );
+  });
+
+  it("rejects invalid category filters", async () => {
+    const response = await GET(createGetRequest("?usage=bad&limit=500"));
+    const body = (await response.json()) as { message: string };
+
+    expect(response.status).toBe(400);
+    expect(body.message).toBe("Invalid filters.");
+    expect(mocks.prisma.category.findMany).not.toHaveBeenCalled();
   });
 
   it("creates a category with valid input", async () => {
@@ -138,7 +170,7 @@ describe("admin category collection route", () => {
       response: notFoundResponse,
     });
 
-    const response = await GET();
+    const response = await GET(createGetRequest());
     const body = (await response.json()) as { message: string };
 
     expect(response.status).toBe(404);

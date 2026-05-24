@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import type { ChangeEvent, Dispatch, FormEvent, SetStateAction } from "react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useAppPreferences } from "~/components/providers/AppPreferencesProvider";
 import { OptimizedImage } from "~/components/ui/OptimizedImage";
 
@@ -40,9 +40,39 @@ type ProductForm = {
   categoryId: string;
 };
 
+type Pagination = {
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+};
+
+type ProductSummary = {
+  activeProducts: number;
+  archivedProducts: number;
+};
+
+type ProductFilters = {
+  q: string;
+  categoryId: string;
+  status: "all" | "active" | "archived";
+  stock: "all" | "in_stock" | "out_of_stock" | "low_stock";
+  sort:
+    | "newest"
+    | "oldest"
+    | "name_asc"
+    | "name_desc"
+    | "price_asc"
+    | "price_desc"
+    | "stock_asc"
+    | "stock_desc";
+};
+
 type ProductsResponse = {
   products?: AdminProduct[];
   product?: AdminProduct;
+  pagination?: Pagination;
+  summary?: ProductSummary;
   message?: string;
   errors?: FieldErrors;
 };
@@ -50,6 +80,7 @@ type ProductsResponse = {
 type CategoriesResponse = {
   categories?: Category[];
   category?: Category;
+  pagination?: Pagination;
   message?: string;
   errors?: FieldErrors;
 };
@@ -68,6 +99,43 @@ type UploadResponse = {
 };
 
 type MessageType = "success" | "error";
+
+const defaultProductFilters: ProductFilters = {
+  q: "",
+  categoryId: "",
+  status: "all",
+  stock: "all",
+  sort: "newest",
+};
+
+const defaultPagination: Pagination = {
+  page: 1,
+  limit: 20,
+  total: 0,
+  totalPages: 1,
+};
+
+function buildProductsUrl(filters: ProductFilters, page: number) {
+  const params = new URLSearchParams({
+    page: String(page),
+    limit: String(defaultPagination.limit),
+    status: filters.status,
+    stock: filters.stock,
+    sort: filters.sort,
+  });
+
+  const search = filters.q.trim();
+
+  if (search) {
+    params.set("q", search);
+  }
+
+  if (filters.categoryId) {
+    params.set("categoryId", filters.categoryId);
+  }
+
+  return `/api/admin/products?${params.toString()}`;
+}
 
 function getEmptyProductForm(): ProductForm {
   return {
@@ -428,12 +496,26 @@ export function AdminProductsClient() {
 
   const [products, setProducts] = useState<AdminProduct[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
+  const [productFilters, setProductFilters] = useState<ProductFilters>(
+    defaultProductFilters,
+  );
+  const [productPage, setProductPage] = useState(1);
+  const [productPagination, setProductPagination] =
+    useState<Pagination>(defaultPagination);
+  const [productSummary, setProductSummary] = useState<ProductSummary>({
+    activeProducts: 0,
+    archivedProducts: 0,
+  });
 
   const [createForm, setCreateForm] = useState<ProductForm>(() =>
     getEmptyProductForm(),
   );
   const [editProductId, setEditProductId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState<ProductForm | null>(null);
+  const editFormRef = useRef<HTMLFormElement | null>(null);
+  const [pendingEditScrollId, setPendingEditScrollId] = useState<string | null>(
+    null,
+  );
 
   const [createImageUrl, setCreateImageUrl] = useState("");
   const [editImageUrl, setEditImageUrl] = useState("");
@@ -458,14 +540,6 @@ export function AdminProductsClient() {
     null,
   );
 
-  const activeProducts = useMemo(() => {
-    return products.filter((product) => !product.isArchived);
-  }, [products]);
-
-  const archivedProducts = useMemo(() => {
-    return products.filter((product) => product.isArchived);
-  }, [products]);
-
   function showMessage(type: MessageType, value: string) {
     setMessageType(type);
     setMessage(value);
@@ -481,15 +555,15 @@ export function AdminProductsClient() {
     });
   }
 
-  async function loadAdminData() {
+  async function loadAdminData(page = productPage, filters = productFilters) {
     setIsLoading(true);
     setProductErrors({});
     setCategoryErrors({});
 
     try {
       const [productsResponse, categoriesResponse] = await Promise.all([
-        fetch("/api/admin/products"),
-        fetch("/api/admin/categories"),
+        fetch(buildProductsUrl(filters, page)),
+        fetch("/api/admin/categories?limit=50&sort=name_asc"),
       ]);
 
       const [productsData, categoriesData] = (await Promise.all([
@@ -503,6 +577,7 @@ export function AdminProductsClient() {
           productsData.message ?? labels.failedToLoadProducts,
         );
         setProducts([]);
+        setProductPagination(defaultPagination);
         return;
       }
 
@@ -518,6 +593,11 @@ export function AdminProductsClient() {
       const nextProducts = productsData.products ?? [];
 
       setProducts(nextProducts);
+      setProductPage(productsData.pagination?.page ?? page);
+      setProductPagination(productsData.pagination ?? defaultPagination);
+      setProductSummary(
+        productsData.summary ?? { activeProducts: 0, archivedProducts: 0 },
+      );
       setCategories(categoriesData.categories ?? []);
       setStockDrafts(
         Object.fromEntries(
@@ -536,6 +616,26 @@ export function AdminProductsClient() {
     // Load once on mount. Language changes only affect labels.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  useEffect(() => {
+    if (
+      !pendingEditScrollId ||
+      pendingEditScrollId !== editProductId ||
+      !editForm
+    ) {
+      return;
+    }
+
+    const frame = window.requestAnimationFrame(() => {
+      editFormRef.current?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+      setPendingEditScrollId(null);
+    });
+
+    return () => window.cancelAnimationFrame(frame);
+  }, [editForm, editProductId, pendingEditScrollId]);
 
   function addCreateImageUrl() {
     const nextUrl = createImageUrl.trim();
@@ -664,7 +764,7 @@ export function AdminProductsClient() {
       setCreateForm(getEmptyProductForm());
       setCreateImageUrl("");
       showMessage("success", data.message ?? labels.productCreated);
-      await loadAdminData();
+      await loadAdminData(productPage, productFilters);
     } catch {
       showMessage("error", labels.failedToConnect);
     } finally {
@@ -676,6 +776,7 @@ export function AdminProductsClient() {
     setProductErrors({});
     setMessage("");
     setEditProductId(product.id);
+    setPendingEditScrollId(product.id);
     setEditImageUrl("");
 
     setEditForm({
@@ -693,6 +794,7 @@ export function AdminProductsClient() {
   function cancelEditingProduct() {
     setEditProductId(null);
     setEditForm(null);
+    setPendingEditScrollId(null);
     setEditImageUrl("");
     setProductErrors({});
   }
@@ -727,7 +829,7 @@ export function AdminProductsClient() {
 
       showMessage("success", data.message ?? labels.productUpdated);
       cancelEditingProduct();
-      await loadAdminData();
+      await loadAdminData(productPage, productFilters);
     } catch {
       showMessage("error", labels.failedToConnect);
     } finally {
@@ -752,7 +854,7 @@ export function AdminProductsClient() {
       }
 
       showMessage("success", data.message ?? labels.productArchived);
-      await loadAdminData();
+      await loadAdminData(productPage, productFilters);
     } catch {
       showMessage("error", labels.failedToConnect);
     } finally {
@@ -777,7 +879,7 @@ export function AdminProductsClient() {
       }
 
       showMessage("success", data.message ?? labels.productRestored);
-      await loadAdminData();
+      await loadAdminData(productPage, productFilters);
     } catch {
       showMessage("error", labels.failedToConnect);
     } finally {
@@ -808,12 +910,34 @@ export function AdminProductsClient() {
       }
 
       showMessage("success", data.message ?? labels.stockUpdated);
-      await loadAdminData();
+      await loadAdminData(productPage, productFilters);
     } catch {
       showMessage("error", labels.failedToConnect);
     } finally {
       setUpdatingProductId(null);
     }
+  }
+
+  function handleApplyProductFilters(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setProductPage(1);
+    void loadAdminData(1, productFilters);
+  }
+
+  function clearProductFilters() {
+    setProductFilters(defaultProductFilters);
+    setProductPage(1);
+    void loadAdminData(1, defaultProductFilters);
+  }
+
+  function goToProductPage(page: number) {
+    const nextPage = Math.min(
+      Math.max(page, 1),
+      Math.max(productPagination.totalPages, 1),
+    );
+
+    setProductPage(nextPage);
+    void loadAdminData(nextPage, productFilters);
   }
 
   async function handleCreateCategory(event: FormEvent<HTMLFormElement>) {
@@ -846,7 +970,7 @@ export function AdminProductsClient() {
       setCategoryName("");
       setCategorySlug("");
       showMessage("success", data.message ?? labels.categoryCreated);
-      await loadAdminData();
+      await loadAdminData(productPage, productFilters);
     } catch {
       showMessage("error", labels.failedToConnect);
     } finally {
@@ -914,7 +1038,7 @@ export function AdminProductsClient() {
             {labels.activeProducts}
           </p>
           <p className="mt-2 text-2xl font-black text-zinc-950 dark:text-white">
-            {activeProducts.length}
+            {productSummary.activeProducts}
           </p>
         </div>
 
@@ -923,7 +1047,7 @@ export function AdminProductsClient() {
             {labels.archivedProducts}
           </p>
           <p className="mt-2 text-2xl font-black text-zinc-950 dark:text-white">
-            {archivedProducts.length}
+            {productSummary.archivedProducts}
           </p>
         </div>
 
@@ -978,8 +1102,9 @@ export function AdminProductsClient() {
 
           {editForm && editProductId && (
             <form
+              ref={editFormRef}
               onSubmit={handleUpdateProduct}
-              className="rounded-3xl border border-orange-200 bg-orange-50 p-5 shadow-sm sm:p-6 dark:border-orange-900 dark:bg-orange-950"
+              className="scroll-mt-24 rounded-3xl border border-orange-200 bg-orange-50 p-5 shadow-sm sm:p-6 dark:border-orange-900 dark:bg-orange-950"
             >
               <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                 <div>
@@ -1136,6 +1261,152 @@ export function AdminProductsClient() {
           </button>
         </div>
 
+        <form
+          onSubmit={handleApplyProductFilters}
+          className="mt-6 grid gap-4 rounded-3xl border border-zinc-200 bg-zinc-50 p-4 dark:border-zinc-800 dark:bg-zinc-950/50"
+        >
+          <div className="grid gap-4 lg:grid-cols-[1.4fr_1fr_1fr_1fr_1fr]">
+            <div>
+              <label className="text-sm font-semibold text-zinc-800 dark:text-zinc-100">
+                {labels.search}
+              </label>
+              <input
+                value={productFilters.q}
+                onChange={(event) =>
+                  setProductFilters((current) => ({
+                    ...current,
+                    q: event.target.value,
+                  }))
+                }
+                className="mt-2 w-full rounded-2xl border border-zinc-300 bg-white px-4 py-3 text-sm text-zinc-950 transition outline-none focus:border-orange-600 focus:ring-4 focus:ring-orange-100 dark:border-zinc-700 dark:bg-zinc-950 dark:text-white dark:focus:border-orange-400 dark:focus:ring-orange-950"
+                placeholder={labels.searchPlaceholder}
+              />
+            </div>
+
+            <div>
+              <label className="text-sm font-semibold text-zinc-800 dark:text-zinc-100">
+                {labels.categoryFilter}
+              </label>
+              <select
+                value={productFilters.categoryId}
+                onChange={(event) =>
+                  setProductFilters((current) => ({
+                    ...current,
+                    categoryId: event.target.value,
+                  }))
+                }
+                className="mt-2 w-full rounded-2xl border border-zinc-300 bg-white px-4 py-3 text-sm text-zinc-950 transition outline-none focus:border-orange-600 focus:ring-4 focus:ring-orange-100 dark:border-zinc-700 dark:bg-zinc-950 dark:text-white dark:focus:border-orange-400 dark:focus:ring-orange-950"
+              >
+                <option value="">{labels.allCategories}</option>
+                {categories.map((category) => (
+                  <option key={category.id} value={category.id}>
+                    {category.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="text-sm font-semibold text-zinc-800 dark:text-zinc-100">
+                {labels.statusFilter}
+              </label>
+              <select
+                value={productFilters.status}
+                onChange={(event) =>
+                  setProductFilters((current) => ({
+                    ...current,
+                    status: event.target.value as ProductFilters["status"],
+                  }))
+                }
+                className="mt-2 w-full rounded-2xl border border-zinc-300 bg-white px-4 py-3 text-sm text-zinc-950 transition outline-none focus:border-orange-600 focus:ring-4 focus:ring-orange-100 dark:border-zinc-700 dark:bg-zinc-950 dark:text-white dark:focus:border-orange-400 dark:focus:ring-orange-950"
+              >
+                <option value="all">{labels.allStatuses}</option>
+                <option value="active">{labels.activeStatus}</option>
+                <option value="archived">{labels.archivedStatus}</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="text-sm font-semibold text-zinc-800 dark:text-zinc-100">
+                {labels.stockFilter}
+              </label>
+              <select
+                value={productFilters.stock}
+                onChange={(event) =>
+                  setProductFilters((current) => ({
+                    ...current,
+                    stock: event.target.value as ProductFilters["stock"],
+                  }))
+                }
+                className="mt-2 w-full rounded-2xl border border-zinc-300 bg-white px-4 py-3 text-sm text-zinc-950 transition outline-none focus:border-orange-600 focus:ring-4 focus:ring-orange-100 dark:border-zinc-700 dark:bg-zinc-950 dark:text-white dark:focus:border-orange-400 dark:focus:ring-orange-950"
+              >
+                <option value="all">{labels.allStock}</option>
+                <option value="in_stock">{labels.inStock}</option>
+                <option value="out_of_stock">{labels.outOfStock}</option>
+                <option value="low_stock">{labels.lowStock}</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="text-sm font-semibold text-zinc-800 dark:text-zinc-100">
+                {labels.sortBy}
+              </label>
+              <select
+                value={productFilters.sort}
+                onChange={(event) =>
+                  setProductFilters((current) => ({
+                    ...current,
+                    sort: event.target.value as ProductFilters["sort"],
+                  }))
+                }
+                className="mt-2 w-full rounded-2xl border border-zinc-300 bg-white px-4 py-3 text-sm text-zinc-950 transition outline-none focus:border-orange-600 focus:ring-4 focus:ring-orange-100 dark:border-zinc-700 dark:bg-zinc-950 dark:text-white dark:focus:border-orange-400 dark:focus:ring-orange-950"
+              >
+                <option value="newest">{labels.sortNewest}</option>
+                <option value="oldest">{labels.sortOldest}</option>
+                <option value="name_asc">{labels.sortNameAsc}</option>
+                <option value="name_desc">{labels.sortNameDesc}</option>
+                <option value="price_asc">{labels.sortPriceAsc}</option>
+                <option value="price_desc">{labels.sortPriceDesc}</option>
+                <option value="stock_asc">{labels.sortStockAsc}</option>
+                <option value="stock_desc">{labels.sortStockDesc}</option>
+              </select>
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-sm text-zinc-500 dark:text-zinc-400">
+              {labels.pageInfo
+                .replace("{page}", String(productPagination.page))
+                .replace(
+                  "{totalPages}",
+                  String(productPagination.totalPages),
+                )}{" "}
+              ·{" "}
+              {labels.totalProducts.replace(
+                "{count}",
+                String(productPagination.total),
+              )}
+            </p>
+
+            <div className="flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={clearProductFilters}
+                className="rounded-full border border-zinc-300 px-4 py-2 text-sm font-semibold text-zinc-800 transition hover:bg-white dark:border-zinc-700 dark:text-zinc-100 dark:hover:bg-zinc-900"
+              >
+                {labels.clearFilters}
+              </button>
+
+              <button
+                type="submit"
+                className="rounded-full bg-zinc-950 px-4 py-2 text-sm font-semibold text-white transition hover:bg-zinc-800 dark:bg-white dark:text-zinc-950 dark:hover:bg-zinc-200"
+              >
+                {labels.applyFilters}
+              </button>
+            </div>
+          </div>
+        </form>
+
         <div className="mt-6 space-y-4">
           {products.length === 0 ? (
             <div className="rounded-2xl border border-dashed border-zinc-300 p-8 text-center text-sm text-zinc-500 dark:border-zinc-700 dark:text-zinc-400">
@@ -1271,6 +1542,34 @@ export function AdminProductsClient() {
               );
             })
           )}
+        </div>
+
+        <div className="mt-6 flex flex-col gap-3 border-t border-zinc-200 pt-4 sm:flex-row sm:items-center sm:justify-between dark:border-zinc-800">
+          <p className="text-sm text-zinc-500 dark:text-zinc-400">
+            {labels.pageInfo
+              .replace("{page}", String(productPagination.page))
+              .replace("{totalPages}", String(productPagination.totalPages))}
+          </p>
+
+          <div className="flex flex-wrap gap-2">
+            <button
+              type="button"
+              disabled={productPagination.page <= 1}
+              onClick={() => goToProductPage(productPagination.page - 1)}
+              className="rounded-full border border-zinc-300 px-4 py-2 text-sm font-semibold text-zinc-800 transition hover:bg-zinc-100 disabled:cursor-not-allowed disabled:opacity-50 dark:border-zinc-700 dark:text-zinc-100 dark:hover:bg-zinc-950"
+            >
+              {labels.previousPage}
+            </button>
+
+            <button
+              type="button"
+              disabled={productPagination.page >= productPagination.totalPages}
+              onClick={() => goToProductPage(productPagination.page + 1)}
+              className="rounded-full border border-zinc-300 px-4 py-2 text-sm font-semibold text-zinc-800 transition hover:bg-zinc-100 disabled:cursor-not-allowed disabled:opacity-50 dark:border-zinc-700 dark:text-zinc-100 dark:hover:bg-zinc-950"
+            >
+              {labels.nextPage}
+            </button>
+          </div>
         </div>
       </section>
     </section>
