@@ -88,6 +88,7 @@ describe("admin product collection route", () => {
         images: [],
         isArchived: false,
         isFeatured: false,
+        showStock: true,
         createdAt: new Date("2026-01-01T00:00:00.000Z"),
         updatedAt: new Date("2026-01-02T00:00:00.000Z"),
         category: {
@@ -153,6 +154,7 @@ describe("admin product collection route", () => {
       images: [],
       isArchived: false,
       isFeatured: false,
+      showStock: false,
       createdAt: new Date("2026-01-01T00:00:00.000Z"),
       updatedAt: new Date("2026-01-02T00:00:00.000Z"),
       category: {
@@ -171,14 +173,24 @@ describe("admin product collection route", () => {
         stock: "3",
         images: [],
         isFeatured: false,
+        showStock: false,
         categoryId,
       }),
     );
-    const body = (await response.json()) as { product: { slug: string } };
+    const body = (await response.json()) as {
+      product: { slug: string; showStock: boolean };
+    };
 
     expect(response.status).toBe(201);
     expect(body.product.slug).toBe("figure");
-    expect(mocks.prisma.product.create).toHaveBeenCalled();
+    expect(body.product.showStock).toBe(false);
+    expect(mocks.prisma.product.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          showStock: false,
+        }),
+      }),
+    );
   });
 
   it("hides the route from non-admin users", async () => {

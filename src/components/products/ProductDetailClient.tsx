@@ -13,6 +13,7 @@ type Product = {
   description: string | null;
   price: string;
   stock: number;
+  showStock: boolean;
   images: string[];
   isFeatured: boolean;
   createdAt: string;
@@ -242,7 +243,9 @@ export function ProductDetailClient({ slug }: ProductDetailClientProps) {
                 </span>
               ) : (
                 <span className="rounded-full bg-green-50 px-3 py-1 text-sm font-semibold text-green-700 dark:bg-green-950 dark:text-green-300">
-                  {product.stock} {t.products.inStock}
+                  {product.showStock
+                    ? `${product.stock} ${t.products.inStock}`
+                    : t.products.inStock}
                 </span>
               )}
             </div>

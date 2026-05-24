@@ -8,6 +8,7 @@ type ProductCardProps = {
     slug: string;
     price: string;
     stock: number;
+    showStock: boolean;
     images: string[];
     isFeatured?: boolean;
     category: {
@@ -22,6 +23,7 @@ type ProductCardProps = {
     soldOut: string;
     out: string;
     left: string;
+    inStock: string;
   };
 };
 
@@ -32,6 +34,7 @@ function formatPrice(price: string) {
 export function ProductCard({ product, labels }: ProductCardProps) {
   const mainImage = product.images.at(0);
   const isOutOfStock = product.stock <= 0;
+  const shouldShowStockCount = product.showStock;
 
   return (
     <Link
@@ -87,7 +90,9 @@ export function ProductCard({ product, labels }: ProductCardProps) {
             </span>
           ) : (
             <span className="rounded-full bg-green-50 px-3 py-1 text-xs font-semibold text-green-700 dark:bg-green-950 dark:text-green-300">
-              {product.stock} {labels.left}
+              {shouldShowStockCount
+                ? `${product.stock} ${labels.left}`
+                : labels.inStock}
             </span>
           )}
         </div>

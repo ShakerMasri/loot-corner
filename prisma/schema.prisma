@@ -133,6 +133,7 @@ model Product {
   images      String[] // array of Cloudinary URLs
   isArchived  Boolean  @default(false) // hide without deleting
   isFeatured  Boolean  @default(false)
+  showStock   Boolean  @default(true) // controls whether customers see exact stock counts
 
   categoryId String
   category   Category @relation(fields: [categoryId], references: [id])

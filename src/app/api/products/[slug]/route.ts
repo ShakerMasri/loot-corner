@@ -35,6 +35,7 @@ export async function GET(_request: Request, { params }: ProductRouteProps) {
         stock: true,
         images: true,
         isFeatured: true,
+        showStock: true,
         createdAt: true,
         category: {
           select: {

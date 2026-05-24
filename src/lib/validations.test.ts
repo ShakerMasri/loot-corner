@@ -121,6 +121,7 @@ describe("createProductSchema", () => {
     images: ["https://res.cloudinary.com/demo/image/upload/test.jpg"],
     isArchived: false,
     isFeatured: false,
+    showStock: true,
     categoryId: "category-1",
   };
 
@@ -131,6 +132,20 @@ describe("createProductSchema", () => {
 
     if (result.success) {
       expect(result.data.price).toBe(99.99);
+      expect(result.data.showStock).toBe(true);
+    }
+  });
+
+  it("accepts hidden customer stock counts", () => {
+    const result = createProductSchema.safeParse({
+      ...validProduct,
+      showStock: false,
+    });
+
+    expect(result.success).toBe(true);
+
+    if (result.success) {
+      expect(result.data.showStock).toBe(false);
     }
   });
 

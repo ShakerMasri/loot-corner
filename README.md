@@ -47,6 +47,12 @@ Completed:
 - Playwright E2E testing setup
 - Staging-safe E2E tests for public pages, customer auth, cart, orders, admin access, and admin orders read-only behavior
 - Playwright auth-state reuse for stable customer/admin E2E tests
+- Admin-confirmed stock flow: customer checkout creates a pending order, and stock decreases only when admin confirms the order
+- Transaction-safe admin order confirmation with insufficient-stock handling and protection against double stock deduction
+- Admin orders page with server-side filters, capped pagination, order cards, details/edit panel, skeleton loading, and mobile-friendly details scrolling
+- Order archiving/deletion was intentionally removed so order history remains auditable
+- Admin products page with server-side filters, capped pagination, sorting, and edit-form scroll behavior
+- Admin categories page with server-side filters, capped pagination, sorting, and safe delete behavior
 
 Not started yet:
 
@@ -56,8 +62,6 @@ Not started yet:
 
 Planned next checkpoints:
 
-- Stock should decrease only after admin confirms an order, not immediately when the customer places it.
-- Add a customer-facing message after order placement explaining that the store owner will confirm the order by WhatsApp or phone.
 - Add admin control for whether customers can see stock counts.
 - Add product discounts so customers can see old price versus discounted price.
 - Consider making delivery areas/prices database-managed and admin-editable while keeping order delivery price snapshots safe.
@@ -75,6 +79,7 @@ Planned next checkpoints:
 - Place cash-on-delivery orders
 - Select delivery area / receive option during checkout
 - Review product total, delivery price, and final total before confirming an order
+- Receive a post-order message explaining that the store owner will confirm the order by WhatsApp or phone
 - View own orders, including delivery details
 - View and update profile information
 
@@ -82,12 +87,17 @@ Planned next checkpoints:
 
 - Admin dashboard
 - Manage products
+- Filter, sort, and paginate admin products server-side
 - Upload product images
 - Archive and restore products
 - Manage product stock
 - Manage categories
+- Filter, sort, and paginate admin categories server-side
 - Safely delete categories only when no products are related
 - View customer orders with contact and delivery details
+- Filter and paginate admin orders server-side
+- View order cards and open a details/edit panel for each order
+- Confirm pending orders and deduct stock only during admin confirmation
 - Update order status
 - Update payment status
 - Add internal order notes
@@ -111,6 +121,10 @@ This project follows these rules:
 - Rate limiting should be enabled for auth routes, public APIs, and protected mutation routes.
 - Resend verification email requests must have a stricter backend rate limit, not only a frontend cooldown.
 - CSRF or same-origin checks should protect cookie-based state-changing requests.
+- Admin filters and pagination must be validated server-side; the frontend must not load everything and filter sensitive data locally.
+- Product prices and stock decisions must be calculated on the server, not trusted from client-submitted values.
+- Stock deduction must be protected against double deduction and should happen only through the reviewed admin confirmation flow.
+- Important business records such as orders should not be hard-deleted unless a separate retention/audit policy is reviewed.
 
 ## Requirements
 
@@ -620,14 +634,21 @@ Important production rules:
 - [ ] Checkout creates an order once.
 - [ ] Checkout requires delivery area/details where applicable.
 - [ ] Checkout confirmation dialog shows product total, delivery price, and final total.
-- [ ] Nablus receive/pickup option requires the customer agreement/coordination notice.
+- [ ] Checkout creates a pending order without immediately reducing stock.
+- [ ] Customer sees the WhatsApp/phone confirmation message after placing an order.
+- [ ] Admin can confirm a pending order and stock decreases once.
+- [ ] Admin confirmation fails clearly if stock is no longer enough.
+- [ ] Cancelling an order handles stock safely according to whether stock was already deducted.
 - [ ] Duplicate checkout protection works.
 - [ ] Customer orders page only shows the current user's orders.
 - [ ] Customer orders page shows delivery details for the user's own orders.
 - [ ] Admin products page works for admins.
+- [ ] Admin product filters, sorting, pagination, archive/restore, stock update, and edit-scroll behavior work.
 - [ ] Admin upload works for admins.
 - [ ] Admin categories page works for admins.
+- [ ] Admin category filters, sorting, pagination, and safe delete behavior work.
 - [ ] Admin orders page works for admins.
+- [ ] Admin order filters, pagination, card list, details panel, status updates, payment updates, notes, and confirm action work.
 - [ ] Admin orders page shows customer contact and delivery details.
 - [ ] Non-admin users cannot access admin APIs.
 - [ ] Signed-out users cannot access protected APIs.
@@ -665,6 +686,7 @@ Recommended version format:
 v0.1.0  internal hardening release
 v0.5.0-legal-pages-checkpoint  legal/customer policy checkpoint
 v0.6.0  checkout delivery and admin category management checkpoint
+v0.7.0  admin confirmation stock and admin filtering checkpoint
 v1.0.0  first production launch
 v1.0.1  production bug fix
 v1.1.0  small feature release
@@ -707,17 +729,25 @@ Current delivery options:
 
 Orders store a snapshot of the selected delivery area, delivery price, city/address/details, notes, and pickup agreement status. This is intentional so old orders remain historically accurate even if delivery prices change later.
 
-### Planned Stock Confirmation Flow
+### Stock Confirmation Flow
 
-The planned order flow is:
+The current order flow is:
 
 1. Customer places an order.
 2. The order is created as pending/unconfirmed.
 3. The store owner confirms the order by WhatsApp or phone.
-4. Stock decreases only when the admin confirms the order, likely through a dedicated confirm action or by moving the order to a processing state.
-5. If stock is no longer available when the admin confirms, the app should block confirmation and show a clear admin error.
+4. Stock decreases only when the admin confirms the order.
+5. If stock is no longer available when the admin confirms, the app blocks confirmation and shows a clear admin error.
 
-Stock deduction must happen inside a safe database transaction to reduce overselling risk.
+Stock deduction is tracked so the same order is not deducted twice. Older orders were protected during the migration/backfill so existing order history stays safe.
+
+### Admin Filtering and Pagination
+
+Admin orders, products, and categories use server-side filters and capped pagination instead of loading every record into the browser. This keeps the admin dashboard faster as data grows and avoids exposing more data than the current screen needs.
+
+### Order Retention
+
+Cancelled orders are not hard-deleted or archived by default. Keeping order history visible is safer for audit, customer support, inventory debugging, and dispute handling.
 
 ### Planned Stock Visibility Control
 
@@ -841,6 +871,13 @@ Before commercial delivery:
 
 ## Project Notes
 
-This app is still being hardened for production. It has reached the checkout delivery/admin category checkpoint, but it should not be treated as fully production-ready until the remaining business rules, deployment checklist, staging tests, and client review are complete.
+This app is still being hardened for production. It has passed the checkout delivery, admin category, admin order confirmation, and admin filtering checkpoints, but it should not be treated as fully production-ready until the remaining business rules, deployment checklist, staging tests, and client review are complete.
+
+Next safest checkpoints:
+
+1. Per-product customer stock visibility control.
+2. Product discounts with server-calculated effective prices and order price snapshots.
+3. Admin-editable delivery pricing dashboard.
+4. Google sign-in review and implementation only after reviewing the current Better Auth setup.
 
 Before launch, complete the production deployment checklist and test the full customer and admin flows on the deployed domain.

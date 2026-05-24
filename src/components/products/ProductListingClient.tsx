@@ -18,6 +18,7 @@ type Product = {
   slug: string;
   price: string;
   stock: number;
+  showStock: boolean;
   images: string[];
   isFeatured: boolean;
   category: Category;
@@ -217,6 +218,7 @@ export function ProductListingClient() {
                 soldOut: t.products.soldOut,
                 out: t.products.out,
                 left: t.products.left,
+                inStock: t.products.inStock,
               }}
             />
           ))}
