@@ -5,6 +5,28 @@ import { prisma } from "~/lib/prisma";
 import { createProductSchema } from "~/lib/validations";
 import { rateLimit } from "~/lib/rate-limit";
 import { validateSameOriginRequest } from "~/lib/csrf";
+import { adminProductsQuerySchema } from "~/server/validations/product";
+
+const adminProductSelect = {
+  id: true,
+  name: true,
+  slug: true,
+  description: true,
+  price: true,
+  stock: true,
+  images: true,
+  isArchived: true,
+  isFeatured: true,
+  createdAt: true,
+  updatedAt: true,
+  category: {
+    select: {
+      id: true,
+      name: true,
+      slug: true,
+    },
+  },
+} satisfies Prisma.ProductSelect;
 
 function serializeProduct(product: {
   id: string;
@@ -32,42 +54,136 @@ function serializeProduct(product: {
   };
 }
 
-export async function GET() {
+function getProductOrderBy(
+  sort:
+    | "newest"
+    | "oldest"
+    | "name_asc"
+    | "name_desc"
+    | "price_asc"
+    | "price_desc"
+    | "stock_asc"
+    | "stock_desc",
+): Prisma.ProductOrderByWithRelationInput {
+  switch (sort) {
+    case "oldest":
+      return { createdAt: "asc" };
+    case "name_asc":
+      return { name: "asc" };
+    case "name_desc":
+      return { name: "desc" };
+    case "price_asc":
+      return { price: "asc" };
+    case "price_desc":
+      return { price: "desc" };
+    case "stock_asc":
+      return { stock: "asc" };
+    case "stock_desc":
+      return { stock: "desc" };
+    case "newest":
+    default:
+      return { createdAt: "desc" };
+  }
+}
+
+function buildProductWhere(filters: {
+  q?: string;
+  categoryId?: string;
+  status: "all" | "active" | "archived";
+  stock: "all" | "in_stock" | "out_of_stock" | "low_stock";
+}) {
+  const where: Prisma.ProductWhereInput = {};
+
+  if (filters.q) {
+    where.OR = [
+      { name: { contains: filters.q, mode: "insensitive" } },
+      { slug: { contains: filters.q, mode: "insensitive" } },
+      { description: { contains: filters.q, mode: "insensitive" } },
+    ];
+  }
+
+  if (filters.categoryId) {
+    where.categoryId = filters.categoryId;
+  }
+
+  if (filters.status === "active") {
+    where.isArchived = false;
+  }
+
+  if (filters.status === "archived") {
+    where.isArchived = true;
+  }
+
+  if (filters.stock === "in_stock") {
+    where.stock = { gt: 0 };
+  }
+
+  if (filters.stock === "out_of_stock") {
+    where.stock = 0;
+  }
+
+  if (filters.stock === "low_stock") {
+    where.stock = { gt: 0, lte: 5 };
+  }
+
+  return where;
+}
+
+export async function GET(request: Request) {
   const admin = await requireAdmin();
 
   if (!admin.ok) {
     return admin.response;
   }
 
+  const url = new URL(request.url);
+  const parsedQuery = adminProductsQuerySchema.safeParse(
+    Object.fromEntries(url.searchParams.entries()),
+  );
+
+  if (!parsedQuery.success) {
+    return NextResponse.json(
+      {
+        message: "Invalid filters.",
+        errors: parsedQuery.error.flatten().fieldErrors,
+      },
+      { status: 400 },
+    );
+  }
+
+  const filters = parsedQuery.data;
+  const where = buildProductWhere(filters);
+  const skip = (filters.page - 1) * filters.limit;
+
   try {
-    const products = await prisma.product.findMany({
-      orderBy: {
-        createdAt: "desc",
-      },
-      select: {
-        id: true,
-        name: true,
-        slug: true,
-        description: true,
-        price: true,
-        stock: true,
-        images: true,
-        isArchived: true,
-        isFeatured: true,
-        createdAt: true,
-        updatedAt: true,
-        category: {
-          select: {
-            id: true,
-            name: true,
-            slug: true,
-          },
-        },
-      },
-    });
+    const [total, products, activeProducts, archivedProducts] =
+      await prisma.$transaction([
+        prisma.product.count({ where }),
+        prisma.product.findMany({
+          where,
+          orderBy: getProductOrderBy(filters.sort),
+          skip,
+          take: filters.limit,
+          select: adminProductSelect,
+        }),
+        prisma.product.count({ where: { isArchived: false } }),
+        prisma.product.count({ where: { isArchived: true } }),
+      ]);
+
+    const totalPages = Math.max(1, Math.ceil(total / filters.limit));
 
     return NextResponse.json({
       products: products.map(serializeProduct),
+      pagination: {
+        page: filters.page,
+        limit: filters.limit,
+        total,
+        totalPages,
+      },
+      summary: {
+        activeProducts,
+        archivedProducts,
+      },
     });
   } catch {
     return NextResponse.json(
@@ -131,26 +247,7 @@ export async function POST(request: Request) {
 
     const product = await prisma.product.create({
       data: parsed.data,
-      select: {
-        id: true,
-        name: true,
-        slug: true,
-        description: true,
-        price: true,
-        stock: true,
-        images: true,
-        isArchived: true,
-        isFeatured: true,
-        createdAt: true,
-        updatedAt: true,
-        category: {
-          select: {
-            id: true,
-            name: true,
-            slug: true,
-          },
-        },
-      },
+      select: adminProductSelect,
     });
 
     return NextResponse.json(

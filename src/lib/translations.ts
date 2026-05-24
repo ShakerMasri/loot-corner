@@ -401,6 +401,23 @@ export type TranslationDictionary = {
       listTitle: string;
       listDescription: string;
       refresh: string;
+      search: string;
+      searchPlaceholder: string;
+      usageFilter: string;
+      allUsage: string;
+      withProducts: string;
+      emptyCategories: string;
+      sortBy: string;
+      sortNameAsc: string;
+      sortNameDesc: string;
+      sortNewest: string;
+      sortOldest: string;
+      applyFilters: string;
+      clearFilters: string;
+      pageInfo: string;
+      previousPage: string;
+      nextPage: string;
+      totalCategories: string;
       noCategoriesYet: string;
       productCount: string;
       deleteBlockedHint: string;
@@ -536,6 +553,34 @@ export type TranslationDictionary = {
       productList: string;
       productListDescription: string;
       refresh: string;
+      search: string;
+      searchPlaceholder: string;
+      categoryFilter: string;
+      allCategories: string;
+      statusFilter: string;
+      allStatuses: string;
+      activeStatus: string;
+      archivedStatus: string;
+      stockFilter: string;
+      allStock: string;
+      inStock: string;
+      outOfStock: string;
+      lowStock: string;
+      sortBy: string;
+      sortNewest: string;
+      sortOldest: string;
+      sortNameAsc: string;
+      sortNameDesc: string;
+      sortPriceAsc: string;
+      sortPriceDesc: string;
+      sortStockAsc: string;
+      sortStockDesc: string;
+      applyFilters: string;
+      clearFilters: string;
+      pageInfo: string;
+      previousPage: string;
+      nextPage: string;
+      totalProducts: string;
       noProductsYet: string;
       noImage: string;
       featured: string;
@@ -1257,6 +1302,23 @@ export const translations: Record<Language, TranslationDictionary> = {
         listDescription:
           "Categories with connected products cannot be deleted. Move or archive related products first.",
         refresh: "Refresh",
+        search: "Search",
+        searchPlaceholder: "Search by category name or slug...",
+        usageFilter: "Usage",
+        allUsage: "All categories",
+        withProducts: "With products",
+        emptyCategories: "Empty categories",
+        sortBy: "Sort by",
+        sortNameAsc: "Name A-Z",
+        sortNameDesc: "Name Z-A",
+        sortNewest: "Newest first",
+        sortOldest: "Oldest first",
+        applyFilters: "Apply filters",
+        clearFilters: "Clear filters",
+        pageInfo: "Page {page} of {totalPages}",
+        previousPage: "Previous",
+        nextPage: "Next",
+        totalCategories: "{count} categories",
         noCategoriesYet: "No categories yet.",
         productCount: "{count} connected products",
         deleteBlockedHint:
@@ -1412,6 +1474,34 @@ export const translations: Record<Language, TranslationDictionary> = {
         productListDescription:
           "Archive hides products from public browsing without deleting past order history.",
         refresh: "Refresh",
+        search: "Search",
+        searchPlaceholder: "Search by product name, slug, or description...",
+        categoryFilter: "Category",
+        allCategories: "All categories",
+        statusFilter: "Status",
+        allStatuses: "All statuses",
+        activeStatus: "Active",
+        archivedStatus: "Archived",
+        stockFilter: "Stock",
+        allStock: "All stock",
+        inStock: "In stock",
+        outOfStock: "Out of stock",
+        lowStock: "Low stock",
+        sortBy: "Sort by",
+        sortNewest: "Newest first",
+        sortOldest: "Oldest first",
+        sortNameAsc: "Name A-Z",
+        sortNameDesc: "Name Z-A",
+        sortPriceAsc: "Price low-high",
+        sortPriceDesc: "Price high-low",
+        sortStockAsc: "Stock low-high",
+        sortStockDesc: "Stock high-low",
+        applyFilters: "Apply filters",
+        clearFilters: "Clear filters",
+        pageInfo: "Page {page} of {totalPages}",
+        previousPage: "Previous",
+        nextPage: "Next",
+        totalProducts: "{count} products",
         noProductsYet: "No products yet.",
         noImage: "No image",
         featured: "Featured",
@@ -2120,6 +2210,23 @@ export const translations: Record<Language, TranslationDictionary> = {
         listDescription:
           "لا يمكن حذف التصنيفات المرتبطة بمنتجات. انقل المنتجات أو أرشفها أولاً.",
         refresh: "تحديث",
+        search: "بحث",
+        searchPlaceholder: "ابحث باسم التصنيف أو الرابط المختصر...",
+        usageFilter: "الاستخدام",
+        allUsage: "كل التصنيفات",
+        withProducts: "مرتبطة بمنتجات",
+        emptyCategories: "تصنيفات فارغة",
+        sortBy: "ترتيب حسب",
+        sortNameAsc: "الاسم أ-ي",
+        sortNameDesc: "الاسم ي-أ",
+        sortNewest: "الأحدث أولاً",
+        sortOldest: "الأقدم أولاً",
+        applyFilters: "تطبيق الفلاتر",
+        clearFilters: "مسح الفلاتر",
+        pageInfo: "صفحة {page} من {totalPages}",
+        previousPage: "السابق",
+        nextPage: "التالي",
+        totalCategories: "{count} تصنيف",
         noCategoriesYet: "لا توجد تصنيفات بعد.",
         productCount: "{count} منتجات مرتبطة",
         deleteBlockedHint: "الحذف ممنوع لأن هناك منتجات تستخدم هذا التصنيف.",
@@ -2274,6 +2381,34 @@ export const translations: Record<Language, TranslationDictionary> = {
         productListDescription:
           "الأرشفة تخفي المنتج من التصفح العام بدون حذف سجل الطلبات السابقة.",
         refresh: "تحديث",
+        search: "بحث",
+        searchPlaceholder: "ابحث باسم المنتج أو الرابط أو الوصف...",
+        categoryFilter: "التصنيف",
+        allCategories: "كل التصنيفات",
+        statusFilter: "الحالة",
+        allStatuses: "كل الحالات",
+        activeStatus: "نشط",
+        archivedStatus: "مؤرشف",
+        stockFilter: "المخزون",
+        allStock: "كل المخزون",
+        inStock: "متوفر",
+        outOfStock: "نفذ المخزون",
+        lowStock: "مخزون منخفض",
+        sortBy: "ترتيب حسب",
+        sortNewest: "الأحدث أولاً",
+        sortOldest: "الأقدم أولاً",
+        sortNameAsc: "الاسم أ-ي",
+        sortNameDesc: "الاسم ي-أ",
+        sortPriceAsc: "السعر من الأقل للأعلى",
+        sortPriceDesc: "السعر من الأعلى للأقل",
+        sortStockAsc: "المخزون من الأقل للأعلى",
+        sortStockDesc: "المخزون من الأعلى للأقل",
+        applyFilters: "تطبيق الفلاتر",
+        clearFilters: "مسح الفلاتر",
+        pageInfo: "صفحة {page} من {totalPages}",
+        previousPage: "السابق",
+        nextPage: "التالي",
+        totalProducts: "{count} منتج",
         noProductsYet: "لا توجد منتجات بعد.",
         noImage: "لا توجد صورة",
         featured: "مميز",
