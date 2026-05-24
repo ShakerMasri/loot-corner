@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState, type FormEvent } from "react";
+import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { useAppPreferences } from "~/components/providers/AppPreferencesProvider";
 import { OptimizedImage } from "~/components/ui/OptimizedImage";
 import { formatDeliveryPriceNis, type DeliveryAreaKey } from "~/lib/delivery";
@@ -31,7 +31,6 @@ type AdminOrderSummary = {
   paymentMethod: string;
   paymentStatus: PaymentStatus;
   totalAmount: string;
-  adminArchivedAt: string | null;
   customerNameAtPurchase: string | null;
   customerEmailAtPurchase: string | null;
   customerPhoneAtPurchase: string | null;
@@ -83,16 +82,10 @@ type UpdateResponse = {
   message?: string;
 };
 
-type ArchiveResponse = {
-  archivedAt?: string;
-  message?: string;
-};
-
 type OrderFilters = {
   q: string;
   status: "ALL" | OrderStatus;
   paymentStatus: "ALL" | PaymentStatus;
-  includeArchived: boolean;
 };
 
 const orderStatuses: OrderStatus[] = [
@@ -109,7 +102,6 @@ const defaultFilters: OrderFilters = {
   q: "",
   status: "ALL",
   paymentStatus: "ALL",
-  includeArchived: false,
 };
 
 const statusOptionsByCurrentStatus: Record<OrderStatus, OrderStatus[]> = {
@@ -204,6 +196,7 @@ export function AdminOrdersClient() {
   const [message, setMessage] = useState("");
   const [updatingOrderId, setUpdatingOrderId] = useState<string | null>(null);
   const [noteDraft, setNoteDraft] = useState("");
+  const detailPanelRef = useRef<HTMLDivElement | null>(null);
 
   const pageRevenue = useMemo(() => {
     return orders.reduce((sum, order) => {
@@ -284,10 +277,6 @@ export function AdminOrdersClient() {
       searchParams.set("paymentStatus", nextFilters.paymentStatus);
     }
 
-    if (nextFilters.includeArchived) {
-      searchParams.set("includeArchived", "true");
-    }
-
     return `/api/admin/orders?${searchParams.toString()}`;
   }
 
@@ -353,9 +342,27 @@ export function AdminOrdersClient() {
     }
   }
 
+  function scrollToDetailsOnMobile() {
+    if (typeof window.matchMedia !== "function") {
+      return;
+    }
+
+    if (!window.matchMedia("(max-width: 1023px)").matches) {
+      return;
+    }
+
+    window.setTimeout(() => {
+      detailPanelRef.current?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    }, 0);
+  }
+
   async function selectOrder(orderId: string) {
     setSelectedOrderId(orderId);
     setSelectedOrder(null);
+    scrollToDetailsOnMobile();
     await loadOrderDetails(orderId);
   }
 
@@ -438,37 +445,6 @@ export function AdminOrdersClient() {
       }
 
       await refreshCurrentView();
-    } catch {
-      setMessage(t.admin.orders.failedToConnect);
-    } finally {
-      setUpdatingOrderId(null);
-    }
-  }
-
-  async function archiveCancelledOrder(orderId: string) {
-    if (!window.confirm(t.admin.orders.archiveConfirm)) {
-      return;
-    }
-
-    setUpdatingOrderId(orderId);
-    setMessage("");
-
-    try {
-      const response = await fetch(`/api/admin/orders/${orderId}`, {
-        method: "DELETE",
-      });
-      const data = (await response.json()) as ArchiveResponse;
-
-      if (!response.ok) {
-        setMessage(data.message ?? t.admin.orders.failedToArchive);
-        return;
-      }
-
-      setMessage(data.message ?? t.admin.orders.archived);
-      setSelectedOrderId(null);
-      setSelectedOrder(null);
-      setNoteDraft("");
-      await loadOrders(pagination?.page ?? 1, filters);
     } catch {
       setMessage(t.admin.orders.failedToConnect);
     } finally {
@@ -608,7 +584,8 @@ export function AdminOrdersClient() {
             onChange={(event) =>
               setFilters((current) => ({
                 ...current,
-                paymentStatus: event.target.value as OrderFilters["paymentStatus"],
+                paymentStatus: event.target
+                  .value as OrderFilters["paymentStatus"],
               }))
             }
             className="mt-2 w-full rounded-2xl border border-zinc-300 bg-white px-4 py-2.5 text-sm text-zinc-950 outline-none transition focus:border-orange-600 focus:ring-4 focus:ring-orange-100 dark:border-zinc-700 dark:bg-zinc-950 dark:text-white dark:focus:border-orange-400 dark:focus:ring-orange-950"
@@ -623,21 +600,6 @@ export function AdminOrdersClient() {
         </label>
 
         <div className="flex flex-col justify-end gap-2">
-          <label className="flex items-center gap-2 rounded-2xl border border-zinc-200 px-3 py-2 text-sm font-semibold text-zinc-700 dark:border-zinc-800 dark:text-zinc-200">
-            <input
-              type="checkbox"
-              checked={filters.includeArchived}
-              onChange={(event) =>
-                setFilters((current) => ({
-                  ...current,
-                  includeArchived: event.target.checked,
-                }))
-              }
-              className="h-4 w-4 rounded border-zinc-300"
-            />
-            {t.admin.orders.includeArchived}
-          </label>
-
           <div className="flex gap-2">
             <button
               type="submit"
@@ -765,11 +727,6 @@ export function AdminOrdersClient() {
                         >
                           {getPaymentStatusLabel(order.paymentStatus)}
                         </span>
-                        {order.adminArchivedAt ? (
-                          <span className="rounded-full bg-zinc-100 px-3 py-1 text-xs font-bold text-zinc-700 dark:bg-zinc-800 dark:text-zinc-200">
-                            {t.admin.orders.archivedBadge}
-                          </span>
-                        ) : null}
                       </div>
                     </div>
 
@@ -842,22 +799,19 @@ export function AdminOrdersClient() {
           ) : null}
         </div>
 
-        <div className="lg:sticky lg:top-24 lg:self-start">
+        <div
+          ref={detailPanelRef}
+          className="scroll-mt-24 lg:sticky lg:top-24 lg:self-start"
+        >
           {isDetailLoading ? (
             <OrderDetailSkeleton />
           ) : selectedOrder ? (
             <article className="rounded-3xl border border-zinc-200 bg-white p-5 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
               {(() => {
                 const isUpdating = updatingOrderId === selectedOrder.id;
-                const isArchived = Boolean(selectedOrder.adminArchivedAt);
                 const canMarkPaid =
                   selectedOrder.status === "DELIVERED" &&
-                  selectedOrder.paymentStatus === "UNPAID" &&
-                  !isArchived;
-                const canArchive =
-                  selectedOrder.status === "CANCELLED" &&
-                  selectedOrder.paymentStatus === "UNPAID" &&
-                  !isArchived;
+                  selectedOrder.paymentStatus === "UNPAID";
 
                 return (
                   <div className="space-y-5">
@@ -888,12 +842,6 @@ export function AdminOrdersClient() {
                         </span>
                       </div>
                     </div>
-
-                    {isArchived ? (
-                      <div className="rounded-2xl border border-zinc-200 bg-zinc-50 p-3 text-sm font-semibold text-zinc-700 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-200">
-                        {t.admin.orders.archivedHelp}
-                      </div>
-                    ) : null}
 
                     <div className="grid gap-3 sm:grid-cols-2">
                       <div className="rounded-2xl bg-zinc-50 p-4 dark:bg-zinc-950">
@@ -930,7 +878,7 @@ export function AdminOrdersClient() {
                       </h3>
 
                       <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                        {selectedOrder.status === "PENDING" && !isArchived ? (
+                        {selectedOrder.status === "PENDING" ? (
                           <button
                             type="button"
                             disabled={isUpdating}
@@ -954,7 +902,7 @@ export function AdminOrdersClient() {
                           </span>
                           <select
                             value={selectedOrder.status}
-                            disabled={isUpdating || isArchived}
+                            disabled={isUpdating}
                             onChange={(event) =>
                               void updateOrderStatus(
                                 selectedOrder.id,
@@ -985,31 +933,11 @@ export function AdminOrdersClient() {
                             {t.admin.orders.markPaid}
                           </button>
                         ) : null}
-
-                        {canArchive ? (
-                          <button
-                            type="button"
-                            disabled={isUpdating}
-                            onClick={() =>
-                              void archiveCancelledOrder(selectedOrder.id)
-                            }
-                            className="rounded-full border border-red-300 px-5 py-2.5 text-sm font-semibold text-red-700 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60 dark:border-red-900 dark:text-red-300 dark:hover:bg-red-950"
-                          >
-                            {isUpdating
-                              ? t.admin.orders.archiving
-                              : t.admin.orders.archiveCancelledOrder}
-                          </button>
-                        ) : null}
                       </div>
 
-                      {selectedOrder.status === "PENDING" && !isArchived ? (
+                      {selectedOrder.status === "PENDING" ? (
                         <p className="mt-3 text-xs leading-5 text-zinc-500 dark:text-zinc-400">
                           {t.admin.orders.confirmOrderHelp}
-                        </p>
-                      ) : null}
-                      {canArchive ? (
-                        <p className="mt-3 text-xs leading-5 text-zinc-500 dark:text-zinc-400">
-                          {t.admin.orders.archiveCancelledHelp}
                         </p>
                       ) : null}
                     </section>
@@ -1187,7 +1115,6 @@ export function AdminOrdersClient() {
                         id={`note-${selectedOrder.id}`}
                         value={noteDraft}
                         onChange={(event) => setNoteDraft(event.target.value)}
-                        disabled={isArchived}
                         placeholder={t.admin.orders.adminNotePlaceholder}
                         rows={6}
                         className="mt-3 w-full resize-none rounded-2xl border border-zinc-300 bg-white px-4 py-3 text-sm text-zinc-950 transition outline-none placeholder:text-zinc-400 focus:border-orange-600 focus:ring-4 focus:ring-orange-100 disabled:cursor-not-allowed disabled:opacity-60 dark:border-zinc-700 dark:bg-zinc-950 dark:text-white dark:focus:border-orange-400 dark:focus:ring-orange-950"
@@ -1195,7 +1122,7 @@ export function AdminOrdersClient() {
 
                       <button
                         type="button"
-                        disabled={isUpdating || isArchived}
+                        disabled={isUpdating}
                         onClick={() => void saveAdminNote(selectedOrder.id)}
                         className="mt-3 w-full rounded-full bg-zinc-950 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-white dark:text-zinc-950 dark:hover:bg-zinc-200"
                       >

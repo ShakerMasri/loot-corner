@@ -20,7 +20,6 @@ describe("admin order validations", () => {
       deliveryAreaKey: "nablus_city",
       page: "2",
       limit: "10",
-      includeArchived: "true",
     });
 
     expect(result.success).toBe(true);
@@ -29,11 +28,10 @@ describe("admin order validations", () => {
       expect(result.data.q).toBe("059");
       expect(result.data.page).toBe(2);
       expect(result.data.limit).toBe(10);
-      expect(result.data.includeArchived).toBe(true);
     }
   });
 
-  it("defaults admin orders pagination and archived filter", () => {
+  it("defaults admin orders pagination", () => {
     const result = adminOrdersQuerySchema.safeParse({});
 
     expect(result.success).toBe(true);
@@ -41,7 +39,6 @@ describe("admin order validations", () => {
     if (result.success) {
       expect(result.data.page).toBe(1);
       expect(result.data.limit).toBe(20);
-      expect(result.data.includeArchived).toBe(false);
     }
   });
 

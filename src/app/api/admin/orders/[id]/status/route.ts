@@ -23,7 +23,6 @@ const orderStatusSelect = {
   paymentMethod: true,
   paymentStatus: true,
   adminNote: true,
-  adminArchivedAt: true,
   updatedAt: true,
 } satisfies Prisma.OrderSelect;
 
@@ -50,7 +49,6 @@ function canChangeStatus(from: OrderStatus, to: OrderStatus) {
 function serializeOrderStatus(order: OrderStatusResponse) {
   return {
     ...order,
-    adminArchivedAt: order.adminArchivedAt?.toISOString() ?? null,
     totalAmount: order.totalAmount.toString(),
     updatedAt: order.updatedAt.toISOString(),
   };
@@ -105,7 +103,6 @@ export async function PATCH(request: Request, { params }: RouteContext) {
           id: true,
           status: true,
           stockDeductedAt: true,
-          adminArchivedAt: true,
           items: {
             select: {
               productId: true,
@@ -117,10 +114,6 @@ export async function PATCH(request: Request, { params }: RouteContext) {
 
       if (!order) {
         throw new Error("ORDER_NOT_FOUND");
-      }
-
-      if (order.adminArchivedAt) {
-        throw new Error("ORDER_ARCHIVED");
       }
 
       const nextStatus = parsedBody.data.status;
@@ -252,13 +245,6 @@ export async function PATCH(request: Request, { params }: RouteContext) {
     ) {
       return NextResponse.json(
         { message: "This order status change is not allowed." },
-        { status: 400 },
-      );
-    }
-
-    if (error instanceof Error && error.message === "ORDER_ARCHIVED") {
-      return NextResponse.json(
-        { message: "Archived orders cannot be edited." },
         { status: 400 },
       );
     }

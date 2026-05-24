@@ -18,7 +18,6 @@ type RouteContext = {
 const orderNoteSelect = {
   id: true,
   adminNote: true,
-  adminArchivedAt: true,
   updatedAt: true,
 } satisfies Prisma.OrderSelect;
 
@@ -29,7 +28,6 @@ type OrderNoteResponse = Prisma.OrderGetPayload<{
 function serializeOrderNote(order: OrderNoteResponse) {
   return {
     ...order,
-    adminArchivedAt: order.adminArchivedAt?.toISOString() ?? null,
     updatedAt: order.updatedAt.toISOString(),
   };
 }
@@ -84,7 +82,6 @@ export async function PATCH(request: Request, { params }: RouteContext) {
       },
       select: {
         id: true,
-        adminArchivedAt: true,
       },
     });
 
@@ -92,13 +89,6 @@ export async function PATCH(request: Request, { params }: RouteContext) {
       return NextResponse.json(
         { message: "Order not found." },
         { status: 404 },
-      );
-    }
-
-    if (order.adminArchivedAt) {
-      return NextResponse.json(
-        { message: "Archived orders cannot be edited." },
-        { status: 400 },
       );
     }
 
