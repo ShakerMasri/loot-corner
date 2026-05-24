@@ -48,6 +48,7 @@ export async function GET() {
             name: true,
             slug: true,
             price: true,
+            discountPrice: true,
             stock: true,
             images: true,
             isArchived: true,
@@ -68,6 +69,7 @@ export async function GET() {
       product: {
         ...item.product,
         price: item.product.price.toString(),
+        discountPrice: item.product.discountPrice?.toString() ?? null,
       },
     }));
 

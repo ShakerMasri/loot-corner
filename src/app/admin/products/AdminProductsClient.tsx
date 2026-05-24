@@ -20,6 +20,7 @@ type AdminProduct = {
   slug: string;
   description: string | null;
   price: string;
+  discountPrice: string | null;
   stock: number;
   images: string[];
   isArchived: boolean;
@@ -35,6 +36,7 @@ type ProductForm = {
   slug: string;
   description: string;
   price: string;
+  discountPrice: string;
   stock: string;
   images: string[];
   isFeatured: boolean;
@@ -145,6 +147,7 @@ function getEmptyProductForm(): ProductForm {
     slug: "",
     description: "",
     price: "",
+    discountPrice: "",
     stock: "0",
     images: [],
     isFeatured: false,
@@ -155,6 +158,18 @@ function getEmptyProductForm(): ProductForm {
 
 function formatPrice(price: string | number) {
   return `$${Number(price).toFixed(2)}`;
+}
+
+function getDisplayPrice(
+  product: Pick<AdminProduct, "price" | "discountPrice">,
+) {
+  return product.discountPrice ?? product.price;
+}
+
+function hasProductDiscount(
+  product: Pick<AdminProduct, "discountPrice">,
+): product is Pick<AdminProduct, "discountPrice"> & { discountPrice: string } {
+  return product.discountPrice !== null;
 }
 
 function makeSlug(value: string) {
@@ -172,6 +187,7 @@ function prepareProductPayload(form: ProductForm) {
     slug: form.slug,
     description: form.description.trim() ? form.description : null,
     price: form.price,
+    discountPrice: form.discountPrice.trim() ? form.discountPrice : null,
     stock: form.stock,
     images: form.images,
     isFeatured: form.isFeatured,
@@ -197,6 +213,9 @@ type ProductFormLabels = {
   descriptionLabel: string;
   descriptionPlaceholder: string;
   price: string;
+  discountPrice: string;
+  discountPricePlaceholder: string;
+  discountPriceHelp: string;
   stock: string;
   category: string;
   selectCategory: string;
@@ -336,7 +355,7 @@ function ProductFormFields({
         <FieldError message={errors.description?.[0]} />
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-3">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <div>
           <label className="text-sm font-semibold text-zinc-800 dark:text-zinc-100">
             {labels.price}
@@ -358,6 +377,33 @@ function ProductFormFields({
           />
 
           <FieldError message={errors.price?.[0]} />
+        </div>
+
+        <div>
+          <label className="text-sm font-semibold text-zinc-800 dark:text-zinc-100">
+            {labels.discountPrice}
+          </label>
+
+          <input
+            type="number"
+            min="0"
+            step="0.01"
+            value={form.discountPrice}
+            onChange={(event) =>
+              setForm((current) => ({
+                ...current,
+                discountPrice: event.target.value,
+              }))
+            }
+            className="mt-2 w-full rounded-2xl border border-zinc-300 bg-white px-4 py-3 text-sm text-zinc-950 transition outline-none focus:border-orange-600 focus:ring-4 focus:ring-orange-100 dark:border-zinc-700 dark:bg-zinc-950 dark:text-white dark:focus:border-orange-400 dark:focus:ring-orange-950"
+            placeholder={labels.discountPricePlaceholder}
+          />
+
+          <p className="mt-1 text-xs leading-5 text-zinc-500 dark:text-zinc-400">
+            {labels.discountPriceHelp}
+          </p>
+
+          <FieldError message={errors.discountPrice?.[0]} />
         </div>
 
         <div>
@@ -814,6 +860,7 @@ export function AdminProductsClient() {
       slug: product.slug,
       description: product.description ?? "",
       price: product.price,
+      discountPrice: product.discountPrice ?? "",
       stock: String(product.stock),
       images: product.images,
       isFeatured: product.isFeatured,
@@ -1505,9 +1552,17 @@ export function AdminProductsClient() {
                             /products/{product.slug}
                           </p>
 
-                          <p className="mt-2 text-lg font-black text-zinc-950 dark:text-white">
-                            {formatPrice(product.price)}
-                          </p>
+                          <div className="mt-2">
+                            <p className="text-lg font-black text-zinc-950 dark:text-white">
+                              {formatPrice(getDisplayPrice(product))}
+                            </p>
+
+                            {hasProductDiscount(product) && (
+                              <p className="text-xs font-semibold text-zinc-500 line-through dark:text-zinc-400">
+                                {formatPrice(product.price)}
+                              </p>
+                            )}
+                          </div>
                         </div>
 
                         <div className="flex flex-col gap-2 sm:flex-row lg:flex-col">

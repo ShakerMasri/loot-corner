@@ -16,6 +16,7 @@ type CartProduct = {
   name: string;
   slug: string;
   price: string;
+  discountPrice: string | null;
   stock: number;
   images: string[];
   isArchived: boolean;
@@ -96,6 +97,14 @@ function formatPrice(price: number, currency: string) {
   return `${price.toFixed(2)} ${currency}`;
 }
 
+function getEffectiveCartPrice(product: CartProduct) {
+  return Number(product.discountPrice ?? product.price);
+}
+
+function hasCartDiscount(product: CartProduct) {
+  return product.discountPrice !== null;
+}
+
 export function CartClient() {
   const { t } = useAppPreferences();
 
@@ -123,7 +132,7 @@ export function CartClient() {
 
   const total = useMemo(() => {
     return cartItems.reduce((sum, item) => {
-      return sum + Number(item.product.price) * item.quantity;
+      return sum + getEffectiveCartPrice(item.product) * item.quantity;
     }, 0);
   }, [cartItems]);
 
@@ -602,7 +611,9 @@ export function CartClient() {
             const isUnavailable = isArchived || isOutOfStock || exceedsStock;
             const isUpdating = updatingItemId === item.id;
             const isRemoving = removingItemId === item.id;
-            const itemSubtotal = Number(item.product.price) * item.quantity;
+            const itemUnitPrice = getEffectiveCartPrice(item.product);
+            const itemHasDiscount = hasCartDiscount(item.product);
+            const itemSubtotal = itemUnitPrice * item.quantity;
 
             return (
               <article
@@ -642,13 +653,24 @@ export function CartClient() {
                           {item.product.name}
                         </Link>
 
-                        <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
-                          {formatPrice(
-                            Number(item.product.price),
-                            t.delivery.currency,
-                          )}{" "}
-                          {t.cart.each}
-                        </p>
+                        <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm">
+                          <span className="font-semibold text-zinc-700 dark:text-zinc-200">
+                            {formatPrice(itemUnitPrice, t.delivery.currency)}
+                          </span>
+
+                          {itemHasDiscount && (
+                            <span className="text-xs text-zinc-500 line-through dark:text-zinc-400">
+                              {formatPrice(
+                                Number(item.product.price),
+                                t.delivery.currency,
+                              )}
+                            </span>
+                          )}
+
+                          <span className="text-zinc-600 dark:text-zinc-400">
+                            {t.cart.each}
+                          </span>
+                        </div>
                       </div>
 
                       <p className="text-lg font-black text-zinc-950 dark:text-white">

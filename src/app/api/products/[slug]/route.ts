@@ -32,6 +32,7 @@ export async function GET(_request: Request, { params }: ProductRouteProps) {
         slug: true,
         description: true,
         price: true,
+        discountPrice: true,
         stock: true,
         images: true,
         isFeatured: true,
@@ -58,6 +59,7 @@ export async function GET(_request: Request, { params }: ProductRouteProps) {
       product: {
         ...product,
         price: product.price.toString(),
+        discountPrice: product.discountPrice?.toString() ?? null,
       },
     });
   } catch {

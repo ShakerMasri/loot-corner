@@ -128,8 +128,9 @@ model Product {
   name        String
   slug        String   @unique
   description String?
-  price       Decimal  @db.Decimal(10, 2) // current live price
-  stock       Int      @default(0) // units available right now
+  price         Decimal  @db.Decimal(10, 2) // original/current regular price
+  discountPrice Decimal? @db.Decimal(10, 2) // optional customer-facing sale price
+  stock         Int      @default(0) // units available right now
   images      String[] // array of Cloudinary URLs
   isArchived  Boolean  @default(false) // hide without deleting
   isFeatured  Boolean  @default(false)

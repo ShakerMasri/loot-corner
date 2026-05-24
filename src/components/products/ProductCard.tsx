@@ -7,6 +7,7 @@ type ProductCardProps = {
     name: string;
     slug: string;
     price: string;
+    discountPrice: string | null;
     stock: number;
     showStock: boolean;
     images: string[];
@@ -31,10 +32,15 @@ function formatPrice(price: string) {
   return `$${Number(price).toFixed(2)}`;
 }
 
+function getDisplayPrice(product: ProductCardProps["product"]) {
+  return product.discountPrice ?? product.price;
+}
+
 export function ProductCard({ product, labels }: ProductCardProps) {
   const mainImage = product.images.at(0);
   const isOutOfStock = product.stock <= 0;
   const shouldShowStockCount = product.showStock;
+  const hasDiscount = product.discountPrice !== null;
 
   return (
     <Link
@@ -80,9 +86,23 @@ export function ProductCard({ product, labels }: ProductCardProps) {
         </div>
 
         <div className="flex items-center justify-between gap-3">
-          <p className="text-lg font-black text-zinc-950 dark:text-white">
-            {formatPrice(product.price)}
-          </p>
+          <div>
+            <p
+              className={
+                hasDiscount
+                  ? "text-lg font-black text-orange-600 dark:text-orange-400"
+                  : "text-lg font-black text-zinc-950 dark:text-white"
+              }
+            >
+              {formatPrice(getDisplayPrice(product))}
+            </p>
+
+            {hasDiscount && (
+              <p className="text-xs font-semibold text-zinc-500 line-through decoration-zinc-500 decoration-solid decoration-2 dark:text-zinc-400 dark:decoration-zinc-400 dark:decoration-solid">
+                {formatPrice(product.price)}
+              </p>
+            )}
+          </div>
 
           {isOutOfStock ? (
             <span className="rounded-full bg-red-50 px-3 py-1 text-xs font-semibold text-red-700 dark:bg-red-950 dark:text-red-300">

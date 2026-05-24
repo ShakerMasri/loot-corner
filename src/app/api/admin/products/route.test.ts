@@ -84,6 +84,7 @@ describe("admin product collection route", () => {
         slug: "figure",
         description: null,
         price: new Prisma.Decimal("19.99"),
+        discountPrice: new Prisma.Decimal("14.99"),
         stock: 3,
         images: [],
         isArchived: false,
@@ -108,7 +109,11 @@ describe("admin product collection route", () => {
       ),
     );
     const body = (await response.json()) as {
-      products: Array<{ slug: string; price: string }>;
+      products: Array<{
+        slug: string;
+        price: string;
+        discountPrice: string | null;
+      }>;
       pagination: { total: number; page: number; limit: number };
       summary: { activeProducts: number; archivedProducts: number };
     };
@@ -116,6 +121,7 @@ describe("admin product collection route", () => {
     expect(response.status).toBe(200);
     expect(body.products[0]?.slug).toBe("figure");
     expect(body.products[0]?.price).toBe("19.99");
+    expect(body.products[0]?.discountPrice).toBe("14.99");
     expect(body.pagination.total).toBe(1);
     expect(body.summary.activeProducts).toBe(4);
     expect(body.summary.archivedProducts).toBe(2);
@@ -150,6 +156,7 @@ describe("admin product collection route", () => {
       slug: "figure",
       description: null,
       price: new Prisma.Decimal("19.99"),
+      discountPrice: new Prisma.Decimal("14.99"),
       stock: 3,
       images: [],
       isArchived: false,
@@ -170,6 +177,7 @@ describe("admin product collection route", () => {
         slug: "figure",
         description: null,
         price: "19.99",
+        discountPrice: "14.99",
         stock: "3",
         images: [],
         isFeatured: false,
@@ -178,15 +186,21 @@ describe("admin product collection route", () => {
       }),
     );
     const body = (await response.json()) as {
-      product: { slug: string; showStock: boolean };
+      product: {
+        slug: string;
+        discountPrice: string | null;
+        showStock: boolean;
+      };
     };
 
     expect(response.status).toBe(201);
     expect(body.product.slug).toBe("figure");
+    expect(body.product.discountPrice).toBe("14.99");
     expect(body.product.showStock).toBe(false);
     expect(mocks.prisma.product.create).toHaveBeenCalledWith(
       expect.objectContaining({
         data: expect.objectContaining({
+          discountPrice: 14.99,
           showStock: false,
         }),
       }),

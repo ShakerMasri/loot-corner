@@ -39,6 +39,7 @@ export async function GET(request: Request) {
           name: true,
           slug: true,
           price: true,
+          discountPrice: true,
           stock: true,
           images: true,
           isFeatured: true,
@@ -68,6 +69,7 @@ export async function GET(request: Request) {
     const safeProducts = products.map((product) => ({
       ...product,
       price: product.price.toString(),
+      discountPrice: product.discountPrice?.toString() ?? null,
     }));
 
     return NextResponse.json({

@@ -13,6 +13,7 @@ const adminProductSelect = {
   slug: true,
   description: true,
   price: true,
+  discountPrice: true,
   stock: true,
   images: true,
   isArchived: true,
@@ -35,6 +36,7 @@ function serializeProduct(product: {
   slug: string;
   description: string | null;
   price: Prisma.Decimal;
+  discountPrice: Prisma.Decimal | null;
   stock: number;
   images: string[];
   isArchived: boolean;
@@ -51,6 +53,7 @@ function serializeProduct(product: {
   return {
     ...product,
     price: product.price.toString(),
+    discountPrice: product.discountPrice?.toString() ?? null,
     createdAt: product.createdAt.toISOString(),
     updatedAt: product.updatedAt.toISOString(),
   };

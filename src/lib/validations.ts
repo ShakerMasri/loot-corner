@@ -27,6 +27,39 @@ const stockSchema = z.coerce
   .min(0, "Stock cannot be negative")
   .max(100_000, "Stock is too large");
 
+const discountPriceSchema = z.preprocess(
+  (value) => {
+    if (typeof value === "string" && value.trim().length === 0) {
+      return null;
+    }
+
+    return value;
+  },
+  z.union([priceSchema, z.null()]).optional(),
+);
+
+type ProductPriceFields = {
+  price?: number;
+  discountPrice?: number | null;
+};
+
+function validateDiscountPrice(
+  data: ProductPriceFields,
+  ctx: z.RefinementCtx,
+) {
+  if (data.discountPrice == null || data.price === undefined) {
+    return;
+  }
+
+  if (data.discountPrice >= data.price) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["discountPrice"],
+      message: "Discount price must be lower than the regular price",
+    });
+  }
+}
+
 function isCloudinaryImageUrl(value: string) {
   try {
     const url = new URL(value);
@@ -101,7 +134,7 @@ export const categorySchema = z.object({
   slug: slugSchema,
 });
 
-export const createProductSchema = z.object({
+const productFieldsSchema = z.object({
   name: z
     .string()
     .trim()
@@ -118,6 +151,8 @@ export const createProductSchema = z.object({
     .nullable(),
 
   price: priceSchema,
+
+  discountPrice: discountPriceSchema,
 
   stock: stockSchema,
 
@@ -145,11 +180,16 @@ export const createCategorySchema = z.object({
   slug: slugSchema,
 });
 
-export const updateProductSchema = createProductSchema
+export const createProductSchema = productFieldsSchema.superRefine(
+  validateDiscountPrice,
+);
+
+export const updateProductSchema = productFieldsSchema
   .omit({
     isArchived: true,
   })
-  .partial();
+  .partial()
+  .superRefine(validateDiscountPrice);
 
 export type RegisterInput = z.infer<typeof registerSchema>;
 export type LoginInput = z.infer<typeof loginSchema>;
