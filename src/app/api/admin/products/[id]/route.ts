@@ -27,6 +27,7 @@ const adminProductSelect = {
   images: true,
   isArchived: true,
   isFeatured: true,
+  showStock: true,
   createdAt: true,
   updatedAt: true,
   category: {

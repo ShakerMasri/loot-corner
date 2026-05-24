@@ -17,6 +17,7 @@ describe("ProductCard", () => {
     price: "99.99",
     slug: "test-product",
     stock: 10,
+    showStock: true,
     images: ["test.jpg"],
     category: {
       id: "cat-1",
@@ -31,6 +32,7 @@ describe("ProductCard", () => {
     soldOut: "Sold Out",
     out: "Out",
     left: "left",
+    inStock: "In stock",
   };
 
   it("renders product name", () => {
@@ -46,5 +48,17 @@ describe("ProductCard", () => {
   it("renders category name", () => {
     render(<ProductCard product={mockProduct} labels={mockLabels} />);
     expect(screen.getByText("Test Category")).toBeInTheDocument();
+  });
+
+  it("hides the exact stock count when customer stock visibility is off", () => {
+    render(
+      <ProductCard
+        product={{ ...mockProduct, showStock: false }}
+        labels={mockLabels}
+      />,
+    );
+
+    expect(screen.queryByText("10 left")).not.toBeInTheDocument();
+    expect(screen.getByText("In stock")).toBeInTheDocument();
   });
 });

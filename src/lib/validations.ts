@@ -130,6 +130,8 @@ export const createProductSchema = z.object({
 
   isFeatured: z.boolean().default(false),
 
+  showStock: z.boolean().default(false),
+
   categoryId: z.string().min(1, "Category is required"),
 });
 

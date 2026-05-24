@@ -17,6 +17,7 @@ const adminProductSelect = {
   images: true,
   isArchived: true,
   isFeatured: true,
+  showStock: true,
   createdAt: true,
   updatedAt: true,
   category: {
@@ -38,6 +39,7 @@ function serializeProduct(product: {
   images: string[];
   isArchived: boolean;
   isFeatured: boolean;
+  showStock: boolean;
   createdAt: Date;
   updatedAt: Date;
   category: {

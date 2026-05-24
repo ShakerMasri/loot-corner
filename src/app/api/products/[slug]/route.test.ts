@@ -27,6 +27,7 @@ type ProductResponse = {
     description: string;
     price: string;
     stock: number;
+    showStock: boolean;
     images: string[];
     isFeatured: boolean;
     category: ProductCategory;
@@ -63,6 +64,7 @@ describe("GET /api/products/[slug]", () => {
       toString: () => "99.99",
     },
     stock: 10,
+    showStock: false,
     images: ["https://res.cloudinary.com/demo/image/upload/test.jpg"],
     isFeatured: true,
     createdAt: new Date("2026-01-01T00:00:00.000Z"),
@@ -85,6 +87,7 @@ describe("GET /api/products/[slug]", () => {
     expect(body.product.name).toBe("Test Product");
     expect(body.product.slug).toBe("test-product");
     expect(body.product.price).toBe("99.99");
+    expect(body.product.showStock).toBe(false);
   });
 
   it("only returns non-archived product with matching slug", async () => {
@@ -99,6 +102,9 @@ describe("GET /api/products/[slug]", () => {
           slug: "test-product",
           isArchived: false,
         },
+        select: expect.objectContaining({
+          showStock: true,
+        }),
       }),
     );
   });

@@ -24,6 +24,7 @@ type AdminProduct = {
   images: string[];
   isArchived: boolean;
   isFeatured: boolean;
+  showStock: boolean;
   createdAt: string;
   updatedAt: string;
   category: Category;
@@ -37,6 +38,7 @@ type ProductForm = {
   stock: string;
   images: string[];
   isFeatured: boolean;
+  showStock: boolean;
   categoryId: string;
 };
 
@@ -146,6 +148,7 @@ function getEmptyProductForm(): ProductForm {
     stock: "0",
     images: [],
     isFeatured: false,
+    showStock: true,
     categoryId: "",
   };
 }
@@ -172,6 +175,7 @@ function prepareProductPayload(form: ProductForm) {
     stock: form.stock,
     images: form.images,
     isFeatured: form.isFeatured,
+    showStock: form.showStock,
     categoryId: form.categoryId,
   };
 }
@@ -197,6 +201,9 @@ type ProductFormLabels = {
   category: string;
   selectCategory: string;
   featuredProduct: string;
+  showStockOnStore: string;
+  showStockHelp: string;
+  stockHidden: string;
   images: string;
   imageUrlPlaceholder: string;
   addUrl: string;
@@ -404,20 +411,43 @@ function ProductFormFields({
         </div>
       </div>
 
-      <label className="flex w-fit items-center gap-3 rounded-2xl border border-zinc-300 px-4 py-3 text-sm font-semibold text-zinc-800 dark:border-zinc-700 dark:text-zinc-100">
-        <input
-          type="checkbox"
-          checked={form.isFeatured}
-          onChange={(event) =>
-            setForm((current) => ({
-              ...current,
-              isFeatured: event.target.checked,
-            }))
-          }
-          className="h-4 w-4"
-        />
-        {labels.featuredProduct}
-      </label>
+      <div className="grid gap-3 sm:grid-cols-2">
+        <label className="flex items-center gap-3 rounded-2xl border border-zinc-300 px-4 py-3 text-sm font-semibold text-zinc-800 dark:border-zinc-700 dark:text-zinc-100">
+          <input
+            type="checkbox"
+            checked={form.isFeatured}
+            onChange={(event) =>
+              setForm((current) => ({
+                ...current,
+                isFeatured: event.target.checked,
+              }))
+            }
+            className="h-4 w-4"
+          />
+          {labels.featuredProduct}
+        </label>
+
+        <label className="rounded-2xl border border-zinc-300 px-4 py-3 text-sm font-semibold text-zinc-800 dark:border-zinc-700 dark:text-zinc-100">
+          <span className="flex items-center gap-3">
+            <input
+              type="checkbox"
+              checked={form.showStock}
+              onChange={(event) =>
+                setForm((current) => ({
+                  ...current,
+                  showStock: event.target.checked,
+                }))
+              }
+              className="h-4 w-4"
+            />
+            {labels.showStockOnStore}
+          </span>
+
+          <span className="mt-2 block text-xs leading-5 font-medium text-zinc-500 dark:text-zinc-400">
+            {labels.showStockHelp}
+          </span>
+        </label>
+      </div>
 
       <div>
         <label className="text-sm font-semibold text-zinc-800 dark:text-zinc-100">
@@ -787,6 +817,7 @@ export function AdminProductsClient() {
       stock: String(product.stock),
       images: product.images,
       isFeatured: product.isFeatured,
+      showStock: product.showStock,
       categoryId: product.category.id,
     });
   }
@@ -1456,6 +1487,12 @@ export function AdminProductsClient() {
                             {product.isArchived && (
                               <span className="rounded-full bg-red-50 px-3 py-1 text-xs font-semibold text-red-700 dark:bg-red-950 dark:text-red-300">
                                 {labels.archived}
+                              </span>
+                            )}
+
+                            {!product.showStock && (
+                              <span className="rounded-full bg-zinc-100 px-3 py-1 text-xs font-semibold text-zinc-700 dark:bg-zinc-800 dark:text-zinc-200">
+                                {labels.stockHidden}
                               </span>
                             )}
                           </div>

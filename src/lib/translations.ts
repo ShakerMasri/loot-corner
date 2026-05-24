@@ -528,6 +528,9 @@ export type TranslationDictionary = {
       category: string;
       selectCategory: string;
       featuredProduct: string;
+      showStockOnStore: string;
+      showStockHelp: string;
+      stockHidden: string;
       images: string;
       imageUrlPlaceholder: string;
       addUrl: string;
@@ -1446,6 +1449,10 @@ export const translations: Record<Language, TranslationDictionary> = {
         category: "Category",
         selectCategory: "Select category",
         featuredProduct: "Featured product",
+        showStockOnStore: "Show stock count to customers",
+        showStockHelp:
+          "When off, customers see availability without the exact number. Admin stock stays visible here.",
+        stockHidden: "Stock hidden",
         images: "Images",
         imageUrlPlaceholder: "https://...",
         addUrl: "Add URL",
@@ -2353,6 +2360,10 @@ export const translations: Record<Language, TranslationDictionary> = {
         category: "التصنيف",
         selectCategory: "اختر التصنيف",
         featuredProduct: "منتج مميز",
+        showStockOnStore: "إظهار عدد المخزون للعملاء",
+        showStockHelp:
+          "عند إيقافه يرى العميل توفر المنتج بدون الرقم الدقيق. يبقى المخزون ظاهراً للإدارة هنا.",
+        stockHidden: "المخزون مخفي",
         images: "الصور",
         imageUrlPlaceholder: "https://...",
         addUrl: "إضافة رابط",
