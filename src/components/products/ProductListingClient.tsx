@@ -17,6 +17,7 @@ type Product = {
   name: string;
   slug: string;
   price: string;
+  discountPrice: string | null;
   stock: number;
   showStock: boolean;
   images: string[];

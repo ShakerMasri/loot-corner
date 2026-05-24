@@ -5,6 +5,7 @@ import { getDeliveryAreaByKey } from "~/lib/delivery";
 import { prisma } from "~/lib/prisma";
 import { rateLimit } from "~/lib/rate-limit";
 import { auth } from "~/server/auth";
+import { getEffectiveProductPrice } from "~/server/pricing";
 import { createOrderSchema } from "~/server/validations/order";
 
 const orderSelect = {
@@ -194,6 +195,7 @@ export async function POST(request: Request) {
               name: true,
               slug: true,
               price: true,
+              discountPrice: true,
               stock: true,
               images: true,
               isArchived: true,
@@ -217,7 +219,9 @@ export async function POST(request: Request) {
       }
 
       const productsTotalAmount = cartItems.reduce((sum, item) => {
-        return sum.plus(item.product.price.mul(item.quantity));
+        const effectivePrice = getEffectiveProductPrice(item.product);
+
+        return sum.plus(effectivePrice.mul(item.quantity));
       }, new Prisma.Decimal(0));
 
       const deliveryPrice = new Prisma.Decimal(deliveryArea.priceNis);
@@ -240,15 +244,19 @@ export async function POST(request: Request) {
           customerEmailAtPurchase: customer.email,
           customerPhoneAtPurchase: customer.phone,
           items: {
-            create: cartItems.map((item) => ({
-              productId: item.productId,
-              quantity: item.quantity,
-              priceAtPurchase: item.product.price,
-              subtotalAmount: item.product.price.mul(item.quantity),
-              productNameAtPurchase: item.product.name,
-              productSlugAtPurchase: item.product.slug,
-              productImagesAtPurchase: item.product.images,
-            })),
+            create: cartItems.map((item) => {
+              const effectivePrice = getEffectiveProductPrice(item.product);
+
+              return {
+                productId: item.productId,
+                quantity: item.quantity,
+                priceAtPurchase: effectivePrice,
+                subtotalAmount: effectivePrice.mul(item.quantity),
+                productNameAtPurchase: item.product.name,
+                productSlugAtPurchase: item.product.slug,
+                productImagesAtPurchase: item.product.images,
+              };
+            }),
           },
         },
         select: orderSelect,

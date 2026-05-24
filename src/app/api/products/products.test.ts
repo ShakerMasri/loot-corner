@@ -29,6 +29,7 @@ type ProductResponse = {
     name: string;
     slug: string;
     price: string;
+    discountPrice: string | null;
     stock: number;
     showStock: boolean;
     images: string[];
@@ -63,6 +64,9 @@ describe("GET /api/products", () => {
       price: {
         toString: () => "99.99",
       },
+      discountPrice: {
+        toString: () => "79.99",
+      },
       stock: 10,
       showStock: false,
       images: ["https://res.cloudinary.com/demo/image/upload/test.jpg"],
@@ -87,6 +91,7 @@ describe("GET /api/products", () => {
     expect(body.categories).toHaveLength(1);
     expect(body.products[0]?.name).toBe("Test Product");
     expect(body.products[0]?.price).toBe("99.99");
+    expect(body.products[0]?.discountPrice).toBe("79.99");
     expect(body.products[0]?.showStock).toBe(false);
   });
 
@@ -99,6 +104,7 @@ describe("GET /api/products", () => {
           isArchived: false,
         },
         select: expect.objectContaining({
+          discountPrice: true,
           showStock: true,
         }),
       }),

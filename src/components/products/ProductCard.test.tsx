@@ -15,6 +15,7 @@ describe("ProductCard", () => {
     id: "1",
     name: "Test Product",
     price: "99.99",
+    discountPrice: null,
     slug: "test-product",
     stock: 10,
     showStock: true,
@@ -43,6 +44,19 @@ describe("ProductCard", () => {
   it("renders product price", () => {
     render(<ProductCard product={mockProduct} labels={mockLabels} />);
     expect(screen.getByText(/99.99/)).toBeInTheDocument();
+  });
+
+  it("renders sale price with regular price crossed out", () => {
+    render(
+      <ProductCard
+        product={{ ...mockProduct, discountPrice: "79.99" }}
+        labels={mockLabels}
+      />,
+    );
+
+    expect(screen.getByText(/79.99/)).toBeInTheDocument();
+    expect(screen.getByText(/79.99/)).toHaveClass("text-orange-600");
+    expect(screen.getByText(/99.99/)).toHaveClass("line-through");
   });
 
   it("renders category name", () => {

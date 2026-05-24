@@ -12,6 +12,7 @@ type Product = {
   slug: string;
   description: string | null;
   price: string;
+  discountPrice: string | null;
   stock: number;
   showStock: boolean;
   images: string[];
@@ -35,6 +36,10 @@ type ProductDetailClientProps = {
 
 function formatPrice(price: string) {
   return `$${Number(price).toFixed(2)}`;
+}
+
+function getDisplayPrice(product: Product) {
+  return product.discountPrice ?? product.price;
 }
 
 export function ProductDetailClient({ slug }: ProductDetailClientProps) {
@@ -138,6 +143,7 @@ export function ProductDetailClient({ slug }: ProductDetailClientProps) {
   }
 
   const isOutOfStock = product.stock <= 0;
+  const hasDiscount = product.discountPrice !== null;
   const selectedImageIndex = selectedImage
     ? product.images.findIndex((image) => image === selectedImage)
     : -1;
@@ -233,9 +239,23 @@ export function ProductDetailClient({ slug }: ProductDetailClientProps) {
             </div>
 
             <div className="flex flex-wrap items-center gap-3">
-              <p className="text-3xl font-black text-zinc-950 dark:text-white">
-                {formatPrice(product.price)}
-              </p>
+              <div>
+                <p
+                  className={
+                    hasDiscount
+                      ? "text-3xl font-black text-orange-600 dark:text-orange-400"
+                      : "text-3xl font-black text-zinc-950 dark:text-white"
+                  }
+                >
+                  {formatPrice(getDisplayPrice(product))}
+                </p>
+
+                {hasDiscount && (
+                  <p className="text-sm font-semibold text-zinc-500 line-through decoration-zinc-500 decoration-solid decoration-2 dark:text-zinc-400 dark:decoration-zinc-400 dark:decoration-solid">
+                    {formatPrice(product.price)}
+                  </p>
+                )}
+              </div>
 
               {isOutOfStock ? (
                 <span className="rounded-full bg-red-50 px-3 py-1 text-sm font-semibold text-red-700 dark:bg-red-950 dark:text-red-300">

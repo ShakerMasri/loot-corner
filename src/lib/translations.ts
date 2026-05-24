@@ -524,6 +524,9 @@ export type TranslationDictionary = {
       descriptionLabel: string;
       descriptionPlaceholder: string;
       price: string;
+      discountPrice: string;
+      discountPricePlaceholder: string;
+      discountPriceHelp: string;
       stock: string;
       category: string;
       selectCategory: string;
@@ -1445,6 +1448,10 @@ export const translations: Record<Language, TranslationDictionary> = {
         descriptionLabel: "Description",
         descriptionPlaceholder: "Write a clear customer-facing description.",
         price: "Price",
+        discountPrice: "Discount price",
+        discountPricePlaceholder: "Optional sale price",
+        discountPriceHelp:
+          "Leave empty for no discount. Must be lower than the regular price.",
         stock: "Stock",
         category: "Category",
         selectCategory: "Select category",
@@ -2356,6 +2363,10 @@ export const translations: Record<Language, TranslationDictionary> = {
         descriptionLabel: "الوصف",
         descriptionPlaceholder: "اكتب وصفاً واضحاً يظهر للعميل.",
         price: "السعر",
+        discountPrice: "سعر الخصم",
+        discountPricePlaceholder: "سعر تخفيض اختياري",
+        discountPriceHelp:
+          "اتركه فارغاً بدون خصم. يجب أن يكون أقل من السعر الأساسي.",
         stock: "المخزون",
         category: "التصنيف",
         selectCategory: "اختر التصنيف",

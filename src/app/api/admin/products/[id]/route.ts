@@ -23,6 +23,7 @@ const adminProductSelect = {
   slug: true,
   description: true,
   price: true,
+  discountPrice: true,
   stock: true,
   images: true,
   isArchived: true,
@@ -47,6 +48,7 @@ function serializeProduct(product: AdminProduct) {
   return {
     ...product,
     price: product.price.toString(),
+    discountPrice: product.discountPrice?.toString() ?? null,
     createdAt: product.createdAt.toISOString(),
     updatedAt: product.updatedAt.toISOString(),
   };
@@ -157,6 +159,50 @@ export async function PATCH(request: Request, { params }: ProductRouteProps) {
             message: "Invalid input.",
             errors: {
               categoryId: ["Category not found."],
+            },
+          },
+          { status: 400 },
+        );
+      }
+    }
+
+    if (
+      parsedBody.data.price !== undefined ||
+      parsedBody.data.discountPrice !== undefined
+    ) {
+      const existingProduct = await prisma.product.findUnique({
+        where: {
+          id: parsedParams.data.id,
+        },
+        select: {
+          price: true,
+          discountPrice: true,
+        },
+      });
+
+      if (!existingProduct) {
+        return NextResponse.json({ message: "Not found." }, { status: 404 });
+      }
+
+      const nextPrice =
+        parsedBody.data.price !== undefined
+          ? new Prisma.Decimal(parsedBody.data.price)
+          : existingProduct.price;
+      const nextDiscountPrice =
+        parsedBody.data.discountPrice !== undefined
+          ? parsedBody.data.discountPrice === null
+            ? null
+            : new Prisma.Decimal(parsedBody.data.discountPrice)
+          : existingProduct.discountPrice;
+
+      if (nextDiscountPrice?.gte(nextPrice)) {
+        return NextResponse.json(
+          {
+            message: "Invalid input.",
+            errors: {
+              discountPrice: [
+                "Discount price must be lower than the regular price.",
+              ],
             },
           },
           { status: 400 },

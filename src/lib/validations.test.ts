@@ -117,6 +117,7 @@ describe("createProductSchema", () => {
     slug: "test-product",
     description: "A test product",
     price: "99.99",
+    discountPrice: "79.99",
     stock: 10,
     images: ["https://res.cloudinary.com/demo/image/upload/test.jpg"],
     isArchived: false,
@@ -132,8 +133,31 @@ describe("createProductSchema", () => {
 
     if (result.success) {
       expect(result.data.price).toBe(99.99);
+      expect(result.data.discountPrice).toBe(79.99);
       expect(result.data.showStock).toBe(true);
     }
+  });
+
+  it("accepts products without a discount", () => {
+    const result = createProductSchema.safeParse({
+      ...validProduct,
+      discountPrice: null,
+    });
+
+    expect(result.success).toBe(true);
+
+    if (result.success) {
+      expect(result.data.discountPrice).toBeNull();
+    }
+  });
+
+  it("rejects discount prices that are not lower than the regular price", () => {
+    const result = createProductSchema.safeParse({
+      ...validProduct,
+      discountPrice: "99.99",
+    });
+
+    expect(result.success).toBe(false);
   });
 
   it("accepts hidden customer stock counts", () => {
