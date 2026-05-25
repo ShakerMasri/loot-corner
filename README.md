@@ -53,26 +53,32 @@ Completed:
 - Order archiving/deletion was intentionally removed so order history remains auditable
 - Admin products page with server-side filters, capped pagination, sorting, and edit-form scroll behavior
 - Admin categories page with server-side filters, capped pagination, sorting, and safe delete behavior
+- Per-product customer stock visibility control
+- Product discounts with old price/new price display
+- Server-calculated effective product pricing for cart totals and order item price snapshots
+- Google sign-in with Better Auth OAuth provider support while keeping email/password auth working
 
 Not started yet:
 
 - Caching
 - Admin-editable delivery pricing dashboard
-- Google sign-in / OAuth provider setup
 
 Planned next checkpoints:
 
-- Add admin control for whether customers can see stock counts.
-- Add product discounts so customers can see old price versus discounted price.
-- Consider making delivery areas/prices database-managed and admin-editable while keeping order delivery price snapshots safe.
+- Test Google sign-in on staging/production with exact OAuth callback URLs and separate environment secrets.
+- Make delivery areas/prices database-managed and admin-editable while keeping order delivery price snapshots safe.
+- Review caching/performance only after core business rules are stable.
 
 ## Main Features
 
 ### Customer Features
 
-- Register and log in
+- Register and log in with email/password
+- Sign in with Google when OAuth is configured
 - View public products
 - View product details
+- See discounted product prices when an admin discount is active
+- See exact stock counts only when the admin enables customer stock visibility for that product
 - Add products to cart
 - Update cart item quantities
 - Remove cart items
@@ -91,6 +97,8 @@ Planned next checkpoints:
 - Upload product images
 - Archive and restore products
 - Manage product stock
+- Choose whether customers can see exact stock counts per product
+- Add optional product discount prices
 - Manage categories
 - Filter, sort, and paginate admin categories server-side
 - Safely delete categories only when no products are related
@@ -114,6 +122,9 @@ This project follows these rules:
 - API routes must validate request bodies, route params, and query params.
 - API routes must not return password hashes, tokens, secrets, raw database errors, or stack traces.
 - Secrets must stay server-side.
+- OAuth client secrets must be stored only in local or hosting environment variables, never in Git.
+- Google OAuth callback URLs must exactly match the current domain and Better Auth callback route.
+- Google sign-in authenticates a user, but admin authorization must still come from the database `User.role`.
 - Only variables starting with `NEXT_PUBLIC_` are exposed to the browser.
 - This project should not expose secrets through `NEXT_PUBLIC_` variables.
 - Prisma is used for database access instead of unsafe raw SQL.
@@ -123,6 +134,8 @@ This project follows these rules:
 - CSRF or same-origin checks should protect cookie-based state-changing requests.
 - Admin filters and pagination must be validated server-side; the frontend must not load everything and filter sensitive data locally.
 - Product prices and stock decisions must be calculated on the server, not trusted from client-submitted values.
+- Discount pricing must be validated server-side and order items must store price snapshots.
+- Hiding stock counts from customers is display-only; backend stock validation must still run.
 - Stock deduction must be protected against double deduction and should happen only through the reviewed admin confirmation flow.
 - Important business records such as orders should not be hard-deleted unless a separate retention/audit policy is reviewed.
 
@@ -167,6 +180,11 @@ DIRECT_URL="postgresql://USER:PASSWORD@HOST:PORT/DB_NAME"
 BETTER_AUTH_SECRET="long-random-production-secret-at-least-32-characters"
 BETTER_AUTH_URL="http://localhost:3000"
 
+# Optional Google sign-in / OAuth
+# Keep these empty if Google sign-in is not configured for this environment.
+GOOGLE_CLIENT_ID=""
+GOOGLE_CLIENT_SECRET=""
+
 # App URL used when generating email links
 APP_URL="http://localhost:3000"
 
@@ -207,6 +225,16 @@ Do not use local URLs in production:
 BETTER_AUTH_URL="http://localhost:3000"
 APP_URL="http://localhost:3000"
 ```
+
+If Google sign-in is enabled, each environment needs its own Google OAuth client or carefully separated OAuth credentials. The Google Cloud authorized redirect URI must exactly match the deployed domain and Better Auth callback path:
+
+```txt
+Local:      http://localhost:3000/api/auth/callback/google
+Staging:    https://your-staging-domain.com/api/auth/callback/google
+Production: https://your-domain.com/api/auth/callback/google
+```
+
+Do not commit real Google OAuth client secrets. Store them only in local `.env` files or hosting provider environment variables.
 
 For Neon/PostgreSQL setups that use connection pooling, keep the application runtime URL and migration/direct URL separate:
 
@@ -593,6 +621,8 @@ Important production rules:
 - [ ] `BETTER_AUTH_SECRET` is long, random, and private.
 - [ ] `BETTER_AUTH_URL` uses the real `https://` production domain.
 - [ ] `APP_URL` uses the real `https://` production domain.
+- [ ] If Google sign-in is enabled, `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` are configured only in the hosting provider.
+- [ ] If Google sign-in is enabled, the Google Cloud OAuth client includes the exact production callback URL.
 - [ ] SMTP credentials are production-ready.
 - [ ] Upstash Redis variables are configured.
 - [ ] Cloudinary variables are configured.
@@ -620,21 +650,29 @@ Important production rules:
 - [ ] API responses do not expose tokens or secrets.
 - [ ] API responses do not expose raw stack traces or raw database errors.
 - [ ] Login, registration, password reset, and public APIs are rate limited.
+- [ ] OAuth sign-in does not grant admin privileges unless the database `User.role` is explicitly set to `ADMIN`.
+- [ ] OAuth secrets are not committed and are not exposed through `NEXT_PUBLIC_` variables.
 
 ### Application Testing
 
 - [ ] Register works on the deployed domain.
 - [ ] Login works on the deployed domain.
+- [ ] Google sign-in works on the deployed domain if OAuth is enabled.
+- [ ] New Google sign-in users receive normal customer permissions only.
 - [ ] Logout works on the deployed domain.
 - [ ] Password reset emails work.
 - [ ] Email verification flow works, if enabled.
 - [ ] Public product listing works.
 - [ ] Public product details work.
+- [ ] Product stock count visibility follows the admin product setting.
+- [ ] Discounted products show old and new prices correctly.
+- [ ] Cart totals use the server-calculated effective product price.
 - [ ] Cart actions work while logged in.
 - [ ] Checkout creates an order once.
 - [ ] Checkout requires delivery area/details where applicable.
 - [ ] Checkout confirmation dialog shows product total, delivery price, and final total.
 - [ ] Checkout creates a pending order without immediately reducing stock.
+- [ ] Checkout/order item price snapshots use the server-calculated effective product price.
 - [ ] Customer sees the WhatsApp/phone confirmation message after placing an order.
 - [ ] Admin can confirm a pending order and stock decreases once.
 - [ ] Admin confirmation fails clearly if stock is no longer enough.
@@ -673,12 +711,14 @@ Important production rules:
 - [ ] `node_modules` is not committed.
 - [ ] `.next` is not committed.
 - [ ] README is up to date.
-- [ ] Release tag exists for the deployed version.
+- [ ] If this commit was deployed as a release, the matching Git tag exists and points to the deployed commit.
 - [ ] Dependency licenses are reviewed before commercial delivery.
 
 ## Release Versioning
 
-Use Git tags for deployed releases.
+Use Git tags for deployed releases only. Do not describe a version as released or tagged until the tag has actually been created and pushed.
+
+Current known tag state from the repository screenshot: `v0.6.0` is the latest visible tag. Work after that tag should be treated as post-`v0.6.0` development until a new tag is intentionally created.
 
 Recommended version format:
 
@@ -686,7 +726,7 @@ Recommended version format:
 v0.1.0  internal hardening release
 v0.5.0-legal-pages-checkpoint  legal/customer policy checkpoint
 v0.6.0  checkout delivery and admin category management checkpoint
-v0.7.0  admin confirmation stock and admin filtering checkpoint
+v0.7.0  candidate tag for post-v0.6.0 hardening work, only if created and pushed
 v1.0.0  first production launch
 v1.0.1  production bug fix
 v1.1.0  small feature release
@@ -695,17 +735,17 @@ v2.0.0  major or breaking release
 
 Use descriptive checkpoint tags before production when helpful, and reserve `v1.0.0` for the first real production launch.
 
-Create a release tag only after checks pass:
+Create a release tag only after checks pass and after the matching commit is merged/deployed:
 
 ```bash
 npm run check
 npm run build
 git status
-git tag -a v0.1.0 -m "Release v0.1.0"
-git push origin v0.1.0
+git tag -a v0.7.0 -m "Release v0.7.0"
+git push origin v0.7.0
 ```
 
-Tag the exact commit that is deployed.
+Replace `v0.7.0` with the version you actually intend to release. Tag the exact commit that is deployed.
 
 For production releases, prefer this flow:
 
@@ -749,13 +789,33 @@ Admin orders, products, and categories use server-side filters and capped pagina
 
 Cancelled orders are not hard-deleted or archived by default. Keeping order history visible is safer for audit, customer support, inventory debugging, and dispute handling.
 
-### Planned Stock Visibility Control
+### Stock Visibility Control
 
-Admins should be able to choose whether customers can see stock counts. This is a display choice only; backend stock validation must still run regardless of whether the count is visible to customers.
+Admins can choose whether customers can see exact stock counts per product. This is a display choice only; backend stock validation still runs regardless of whether the count is visible to customers.
 
-### Planned Discounts
+### Product Discounts
 
-Admins should be able to add product discounts. Customers should see old price versus discounted price. Order items should keep price snapshots so historical orders do not change if product prices or discounts change later.
+Admins can add an optional discounted price to products. Customers see the discounted price with the original price shown as the old price, and order items keep price snapshots so historical orders do not change if product prices or discounts change later.
+
+The server calculates the effective product price for cart/order totals. The client must not be trusted to submit product prices or discount values.
+
+### Google Sign-in
+
+Google sign-in is supported through Better Auth OAuth configuration while email/password authentication remains available. Google OAuth credentials are optional per environment, so the app can run without Google sign-in when `GOOGLE_CLIENT_ID` or `GOOGLE_CLIENT_SECRET` is not configured.
+
+Google authentication does not decide admin access. Admin permissions still come from the database-backed user role and must be enforced by server-side authorization checks.
+
+Each deployed environment needs the correct Google OAuth callback URL:
+
+```txt
+http://localhost:3000/api/auth/callback/google
+https://your-staging-domain.com/api/auth/callback/google
+https://your-production-domain.com/api/auth/callback/google
+```
+
+### Planned Delivery Pricing Dashboard
+
+Delivery areas/prices still live in code configuration. The next safe improvement is to move them to an admin-managed database table while preserving the existing order delivery area/price snapshots for audit-safe historical orders.
 
 ## Branch Workflow
 
@@ -871,13 +931,12 @@ Before commercial delivery:
 
 ## Project Notes
 
-This app is still being hardened for production. It has passed the checkout delivery, admin category, admin order confirmation, and admin filtering checkpoints, but it should not be treated as fully production-ready until the remaining business rules, deployment checklist, staging tests, and client review are complete.
+This app is still being hardened for production. It has passed the checkout delivery, admin category, admin order confirmation, admin filtering, customer stock visibility, product discount, and Google sign-in checkpoints, but it should not be treated as fully production-ready until the remaining business rules, deployment checklist, staging tests, and client review are complete.
 
 Next safest checkpoints:
 
-1. Per-product customer stock visibility control.
-2. Product discounts with server-calculated effective prices and order price snapshots.
-3. Admin-editable delivery pricing dashboard.
-4. Google sign-in review and implementation only after reviewing the current Better Auth setup.
+1. Verify Google sign-in on staging/production with exact callback URLs and separate environment secrets.
+2. Admin-editable delivery pricing dashboard.
+3. Caching/performance review after the core business rules are stable.
 
 Before launch, complete the production deployment checklist and test the full customer and admin flows on the deployed domain.

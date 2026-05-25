@@ -5,9 +5,13 @@ import { useState } from "react";
 import { useAppPreferences } from "~/components/providers/AppPreferencesProvider";
 import { authClient } from "~/lib/auth-client";
 
-type RegisterStatus = "idle" | "loading" | "success" | "error";
+type RegisterStatus = "idle" | "loading" | "google" | "success" | "error";
 
-export function RegisterForm() {
+type RegisterFormProps = {
+  googleSignInEnabled: boolean;
+};
+
+export function RegisterForm({ googleSignInEnabled }: RegisterFormProps) {
   const { t } = useAppPreferences();
 
   const [name, setName] = useState("");
@@ -17,6 +21,23 @@ export function RegisterForm() {
 
   const [status, setStatus] = useState<RegisterStatus>("idle");
   const [message, setMessage] = useState("");
+
+  async function handleGoogleSignIn() {
+    setStatus("google");
+    setMessage("");
+
+    const { error } = await authClient.signIn.social({
+      provider: "google",
+      callbackURL: "/products",
+      errorCallbackURL: "/register",
+      newUserCallbackURL: "/products",
+    });
+
+    if (error) {
+      setStatus("error");
+      setMessage(error.message ?? t.auth.googleSignInFailed);
+    }
+  }
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -43,6 +64,7 @@ export function RegisterForm() {
   }
 
   const isSubmitting = status === "loading";
+  const isStartingGoogleSignIn = status === "google";
 
   return (
     <div className="mx-auto grid min-h-[calc(100vh-180px)] max-w-6xl items-center gap-10 px-4 py-10 lg:grid-cols-[0.9fr_1.1fr]">
@@ -80,6 +102,29 @@ export function RegisterForm() {
             }`}
           >
             {message}
+          </div>
+        )}
+
+        {googleSignInEnabled && (
+          <div className="mt-6 space-y-4">
+            <button
+              type="button"
+              onClick={() => void handleGoogleSignIn()}
+              disabled={
+                isSubmitting || isStartingGoogleSignIn || status === "success"
+              }
+              className="flex w-full items-center justify-center rounded-full border border-zinc-300 bg-white px-5 py-3 text-sm font-semibold text-zinc-900 transition hover:bg-zinc-50 disabled:cursor-not-allowed disabled:opacity-60 dark:border-zinc-700 dark:bg-zinc-950 dark:text-white dark:hover:bg-zinc-900"
+            >
+              {isStartingGoogleSignIn
+                ? t.auth.continuingWithGoogle
+                : t.auth.continueWithGoogle}
+            </button>
+
+            <div className="flex items-center gap-3 text-xs font-semibold uppercase tracking-[0.2em] text-zinc-400">
+              <span className="h-px flex-1 bg-zinc-200 dark:bg-zinc-800" />
+              <span>{t.auth.orContinueWithEmail}</span>
+              <span className="h-px flex-1 bg-zinc-200 dark:bg-zinc-800" />
+            </div>
           </div>
         )}
 
@@ -129,7 +174,7 @@ export function RegisterForm() {
               htmlFor="phone"
               className="text-sm font-semibold text-zinc-800 dark:text-zinc-100"
             >
-              Phone number
+              {t.auth.phone}
             </label>
 
             <input
@@ -146,7 +191,7 @@ export function RegisterForm() {
             />
 
             <p className="mt-2 text-xs leading-5 text-zinc-500 dark:text-zinc-400">
-              The admin may use this number to confirm your order.
+              {t.auth.phoneHelp}
             </p>
           </div>
 
@@ -177,7 +222,9 @@ export function RegisterForm() {
 
           <button
             type="submit"
-            disabled={isSubmitting || status === "success"}
+            disabled={
+              isSubmitting || isStartingGoogleSignIn || status === "success"
+            }
             className="w-full rounded-full bg-zinc-950 px-5 py-3 text-sm font-semibold text-white transition hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-white dark:text-zinc-950 dark:hover:bg-zinc-200"
           >
             {isSubmitting ? t.auth.creatingAccount : t.auth.createAccount}

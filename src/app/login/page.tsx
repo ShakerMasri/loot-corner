@@ -1,7 +1,12 @@
 import { Suspense } from "react";
 import { LoginForm } from "~/components/auth/LoginForm";
+import { env } from "~/env";
 
 export default function LoginPage() {
+  const googleSignInEnabled = Boolean(
+    env.GOOGLE_CLIENT_ID && env.GOOGLE_CLIENT_SECRET,
+  );
+
   return (
     <Suspense
       fallback={
@@ -10,7 +15,7 @@ export default function LoginPage() {
         </main>
       }
     >
-      <LoginForm />
+      <LoginForm googleSignInEnabled={googleSignInEnabled} />
     </Suspense>
   );
 }

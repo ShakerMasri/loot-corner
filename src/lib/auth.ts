@@ -4,6 +4,20 @@ import { env } from "~/env";
 import { prisma } from "~/lib/prisma";
 import { sendAuthEmail } from "~/server/email";
 
+const googleProvider =
+  env.GOOGLE_CLIENT_ID && env.GOOGLE_CLIENT_SECRET
+    ? {
+        google: {
+          clientId: env.GOOGLE_CLIENT_ID,
+          clientSecret: env.GOOGLE_CLIENT_SECRET,
+          prompt: "select_account" as const,
+          mapProfileToUser: () => ({
+            role: "CUSTOMER",
+          }),
+        },
+      }
+    : undefined;
+
 export const auth = betterAuth({
   secret: env.BETTER_AUTH_SECRET,
   baseURL: env.BETTER_AUTH_URL,
@@ -13,6 +27,14 @@ export const auth = betterAuth({
   }),
 
   trustedOrigins: [env.APP_URL],
+
+  ...(googleProvider ? { socialProviders: googleProvider } : {}),
+
+  account: {
+    accountLinking: {
+      enabled: true,
+    },
+  },
 
   user: {
     additionalFields: {
