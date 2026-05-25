@@ -111,6 +111,8 @@ export default defineConfig({
         "**/customer-cart.e2e.ts",
         "**/customer-pages.e2e.ts",
         "**/customer-order.e2e.ts",
+        "**/customer-product-display.e2e.ts",
+        "**/customer-admin-guards.e2e.ts",
       ],
       use: {
         browserName: "chromium",
@@ -120,7 +122,11 @@ export default defineConfig({
     {
       name: "admin",
       dependencies: ["setup-admin"],
-      testMatch: ["**/admin-access.e2e.ts", "**/admin-orders-readonly.e2e.ts"],
+      testMatch: [
+        "**/admin-access.e2e.ts",
+        "**/admin-orders-readonly.e2e.ts",
+        "**/admin-filters.e2e.ts",
+      ],
       use: {
         browserName: "chromium",
         storageState: "tests/e2e/.auth/admin.json",

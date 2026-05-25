@@ -520,6 +520,9 @@ E2E_ADMIN_PASSWORD="local-test-password"
 
 E2E_PRODUCT_PATH="/products/example-product"
 E2E_ORDER_PRODUCT_PATH="/products/example-product-with-stock"
+E2E_DISCOUNT_PRODUCT_PATH="/products/example-discounted-product"
+E2E_VISIBLE_STOCK_PRODUCT_PATH="/products/example-visible-stock-product"
+E2E_HIDDEN_STOCK_PRODUCT_PATH="/products/example-hidden-stock-product"
 ```
 
 Do not commit `.env.e2e.local`.
@@ -535,6 +538,10 @@ Do not commit `.env.e2e.local`.
 - Avoid email inbox automation while `EMAIL_DELIVERY_MODE="log"`.
 - Use dedicated test customer/admin accounts.
 - Use products with enough stock for order tests.
+- `E2E_ORDER_PRODUCT_PATH` should point to a disposable in-stock product that can safely be ordered during tests.
+- `E2E_DISCOUNT_PRODUCT_PATH` should point to an active product with `discountPrice` set below the regular price.
+- `E2E_VISIBLE_STOCK_PRODUCT_PATH` should point to an in-stock product with customer stock visibility enabled.
+- `E2E_HIDDEN_STOCK_PRODUCT_PATH` should point to an in-stock product with customer stock visibility disabled.
 
 ### Playwright Auth State
 
@@ -567,9 +574,14 @@ Current Playwright coverage includes:
 - customer cart add/cleanup
 - customer authenticated pages
 - controlled customer order creation with delivery checkout confirmation
+- customer order price snapshot checks using the server-calculated effective product price
+- discounted product display checks
+- customer stock visibility display checks
 - guest auth guard behavior
+- signed-in customer admin guard behavior
 - admin read-only pages
 - admin orders read-only API/page behavior
+- admin products/categories/orders filter request smoke tests
 
 ## Staging Notes
 
