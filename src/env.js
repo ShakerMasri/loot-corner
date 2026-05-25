@@ -40,6 +40,9 @@ export const env = createEnv({
     BETTER_AUTH_URL: appUrlSchema,
     APP_URL: appUrlSchema,
 
+    GOOGLE_CLIENT_ID: z.string().min(1).optional(),
+    GOOGLE_CLIENT_SECRET: z.string().min(1).optional(),
+
     DATABASE_URL: z.string().url(),
     DIRECT_URL: z.string().url().optional(),
 
@@ -81,6 +84,8 @@ export const env = createEnv({
     BETTER_AUTH_SECRET: process.env.BETTER_AUTH_SECRET,
     BETTER_AUTH_URL: process.env.BETTER_AUTH_URL,
     APP_URL: process.env.APP_URL,
+    GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID,
+    GOOGLE_CLIENT_SECRET: process.env.GOOGLE_CLIENT_SECRET,
 
     DATABASE_URL: process.env.DATABASE_URL,
     DIRECT_URL: process.env.DIRECT_URL,

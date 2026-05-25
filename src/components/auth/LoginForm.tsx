@@ -4,24 +4,42 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { useAppPreferences } from "~/components/providers/AppPreferencesProvider";
+import { getSafeAuthCallbackUrl } from "~/lib/auth-callback";
 import { authClient } from "~/lib/auth-client";
 
-type LoginStatus = "idle" | "loading" | "error";
+type LoginStatus = "idle" | "loading" | "google" | "error";
 
-export function LoginForm() {
+type LoginFormProps = {
+  googleSignInEnabled: boolean;
+};
+
+export function LoginForm({ googleSignInEnabled }: LoginFormProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { t } = useAppPreferences();
 
-  const requestedCallbackUrl = searchParams.get("callbackUrl");
-  const callbackUrl = requestedCallbackUrl?.startsWith("/")
-    ? requestedCallbackUrl
-    : "/products";
+  const callbackUrl = getSafeAuthCallbackUrl(searchParams.get("callbackUrl"));
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [status, setStatus] = useState<LoginStatus>("idle");
   const [message, setMessage] = useState("");
+
+  async function handleGoogleSignIn() {
+    setStatus("google");
+    setMessage("");
+
+    const { error } = await authClient.signIn.social({
+      provider: "google",
+      callbackURL: callbackUrl,
+      errorCallbackURL: `/login?callbackUrl=${encodeURIComponent(callbackUrl)}`,
+    });
+
+    if (error) {
+      setStatus("error");
+      setMessage(error.message ?? t.auth.googleSignInFailed);
+    }
+  }
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -45,6 +63,7 @@ export function LoginForm() {
   }
 
   const isSubmitting = status === "loading";
+  const isStartingGoogleSignIn = status === "google";
 
   return (
     <div className="mx-auto grid min-h-[calc(100vh-180px)] max-w-6xl items-center gap-10 px-4 py-10 lg:grid-cols-[0.9fr_1.1fr]">
@@ -76,6 +95,27 @@ export function LoginForm() {
         {message && (
           <div className="mt-5 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm font-medium text-red-700 dark:border-red-900 dark:bg-red-950 dark:text-red-300">
             {message}
+          </div>
+        )}
+
+        {googleSignInEnabled && (
+          <div className="mt-6 space-y-4">
+            <button
+              type="button"
+              onClick={() => void handleGoogleSignIn()}
+              disabled={isSubmitting || isStartingGoogleSignIn}
+              className="flex w-full items-center justify-center rounded-full border border-zinc-300 bg-white px-5 py-3 text-sm font-semibold text-zinc-900 transition hover:bg-zinc-50 disabled:cursor-not-allowed disabled:opacity-60 dark:border-zinc-700 dark:bg-zinc-950 dark:text-white dark:hover:bg-zinc-900"
+            >
+              {isStartingGoogleSignIn
+                ? t.auth.continuingWithGoogle
+                : t.auth.continueWithGoogle}
+            </button>
+
+            <div className="flex items-center gap-3 text-xs font-semibold uppercase tracking-[0.2em] text-zinc-400">
+              <span className="h-px flex-1 bg-zinc-200 dark:bg-zinc-800" />
+              <span>{t.auth.orContinueWithEmail}</span>
+              <span className="h-px flex-1 bg-zinc-200 dark:bg-zinc-800" />
+            </div>
           </div>
         )}
 
@@ -131,7 +171,7 @@ export function LoginForm() {
 
           <button
             type="submit"
-            disabled={isSubmitting}
+            disabled={isSubmitting || isStartingGoogleSignIn}
             className="w-full rounded-full bg-zinc-950 px-5 py-3 text-sm font-semibold text-white transition hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-white dark:text-zinc-950 dark:hover:bg-zinc-200"
           >
             {isSubmitting ? t.auth.loggingIn : t.auth.login}

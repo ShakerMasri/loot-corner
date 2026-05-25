@@ -226,8 +226,14 @@ export type TranslationDictionary = {
     email: string;
     password: string;
     name: string;
+    phone: string;
+    phoneHelp: string;
     login: string;
     loggingIn: string;
+    continueWithGoogle: string;
+    continuingWithGoogle: string;
+    orContinueWithEmail: string;
+    googleSignInFailed: string;
     invalidLogin: string;
     noAccount: string;
     createOne: string;
@@ -889,8 +895,14 @@ export const translations: Record<Language, TranslationDictionary> = {
       email: "Email",
       password: "Password",
       name: "Name",
+      phone: "Phone number",
+      phoneHelp: "The admin may use this number to confirm your order.",
       login: "Login",
       loggingIn: "Logging in...",
+      continueWithGoogle: "Continue with Google",
+      continuingWithGoogle: "Opening Google...",
+      orContinueWithEmail: "Or continue with email",
+      googleSignInFailed: "Failed to start Google sign-in. Please try again.",
       invalidLogin: "Invalid email or password.",
       noAccount: "Don't have an account?",
       createOne: "Create one",
@@ -1809,8 +1821,14 @@ export const translations: Record<Language, TranslationDictionary> = {
       email: "البريد الإلكتروني",
       password: "كلمة المرور",
       name: "الاسم",
+      phone: "رقم الهاتف",
+      phoneHelp: "قد يستخدم المسؤول هذا الرقم لتأكيد طلبك.",
       login: "تسجيل الدخول",
       loggingIn: "جار تسجيل الدخول...",
+      continueWithGoogle: "المتابعة باستخدام Google",
+      continuingWithGoogle: "جار فتح Google...",
+      orContinueWithEmail: "أو تابع بالبريد الإلكتروني",
+      googleSignInFailed: "فشل بدء تسجيل الدخول باستخدام Google. حاول مرة أخرى.",
       invalidLogin: "البريد الإلكتروني أو كلمة المرور غير صحيحة.",
       noAccount: "ليس لديك حساب؟",
       createOne: "أنشئ حساباً",
