@@ -8,6 +8,7 @@ type CartItem = {
 
 type CartResponse = {
   items?: unknown;
+  cartItems?: unknown;
   cart?: {
     items?: unknown;
   };
@@ -18,11 +19,13 @@ function getCartItems(data: unknown): CartItem[] {
 
   const response = data as CartResponse;
 
-  const rawItems = Array.isArray(response.items)
-    ? response.items
-    : Array.isArray(response.cart?.items)
-      ? response.cart.items
-      : [];
+  const rawItems = Array.isArray(response.cartItems)
+    ? response.cartItems
+    : Array.isArray(response.items)
+      ? response.items
+      : Array.isArray(response.cart?.items)
+        ? response.cart.items
+        : [];
 
   return rawItems.filter(
     (item): item is CartItem => Boolean(item) && typeof item === "object",

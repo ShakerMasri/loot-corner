@@ -16,6 +16,10 @@ function getFirstOrderId(data: AdminOrdersResponse): string | null {
   return typeof id === "string" && id.trim() ? id : null;
 }
 
+function getShortOrderId(orderId: string): string {
+  return orderId.slice(-8).toUpperCase();
+}
+
 test("admin orders page loads orders API without editing data", async ({
   page,
 }) => {
@@ -45,6 +49,6 @@ test("admin orders page loads orders API without editing data", async ({
   const firstOrderId = getFirstOrderId(data);
 
   if (firstOrderId) {
-    await expect(body).toContainText(firstOrderId);
+    await expect(body).toContainText(getShortOrderId(firstOrderId));
   }
 });
