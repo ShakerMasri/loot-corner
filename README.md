@@ -45,7 +45,7 @@ Completed:
 - Unit testing setup with Vitest and React Testing Library
 - Unit tests for validation schemas, product APIs, CSRF/same-origin checks, admin authorization, middleware behavior, and rate limiting
 - Playwright E2E testing setup
-- Staging-safe E2E tests for public pages, customer auth, cart, orders, admin access, and admin orders read-only behavior
+- Staging-safe E2E tests for public pages, customer auth, cart, orders, product display, admin access, admin guards, and admin filter smoke behavior
 - Playwright auth-state reuse for stable customer/admin E2E tests
 - Admin-confirmed stock flow: customer checkout creates a pending order, and stock decreases only when admin confirms the order
 - Transaction-safe admin order confirmation with insufficient-stock handling and protection against double stock deduction
@@ -57,17 +57,22 @@ Completed:
 - Product discounts with old price/new price display
 - Server-calculated effective product pricing for cart totals and order item price snapshots
 - Google sign-in with Better Auth OAuth provider support while keeping email/password auth working
+- Production-safe server logging with searchable error reference IDs for unexpected API failures
+- Safe route error boundaries for user-facing account, orders, and admin page failures
 
 Not started yet:
 
 - Caching
-- Admin-editable delivery pricing dashboard
+
+Postponed intentionally:
+
+- Admin-editable delivery pricing dashboard. Delivery areas/prices remain code-managed for now, and existing orders keep delivery snapshots for audit safety.
 
 Planned next checkpoints:
 
 - Test Google sign-in on staging/production with exact OAuth callback URLs and separate environment secrets.
-- Make delivery areas/prices database-managed and admin-editable while keeping order delivery price snapshots safe.
-- Review caching/performance only after core business rules are stable.
+- Complete production readiness and client handoff review.
+- Review caching/performance only after core business rules are stable and real usage or smoke-load results show a need.
 
 ## Main Features
 
@@ -591,6 +596,19 @@ Free services are for staging/testing only. Avoid heavy traffic, stress tests, o
 
 Production should use paid/reliable hosting, paid or production-ready database backups, real SMTP configuration, and production secrets separate from staging.
 
+## Production Observability
+
+Unexpected server/API failures should produce a safe, searchable error reference ID such as `err_...`. When a customer or admin reports one of these IDs, search the deployment logs for that exact reference and review the route/action context.
+
+Logging rules:
+
+- Log the route/action and the generated error reference.
+- Log safe identifiers when needed, such as order ID or admin/user ID.
+- Do not log passwords, tokens, cookies, OAuth secrets, environment variables, database URLs, raw request bodies, or unnecessary customer personal data.
+- Normal validation, authentication, and authorization failures should return safe messages and should not create noisy crash logs.
+
+Route error boundaries provide cleaner user-facing failure screens for protected account, orders, and admin areas. They are not a replacement for server logs; they prevent raw technical details from being shown to users.
+
 ## Production Deployment Flow
 
 Before deploying:
@@ -931,6 +949,17 @@ EMAIL_DELIVERY_MODE="smtp"
 
 Do not use personal Gmail SMTP for production client email. Use a real transactional email provider and verify the sending domain.
 
+## Client Handoff and Launch Docs
+
+Additional handoff documents live in:
+
+```txt
+docs/client-handoff.md
+docs/production-readiness-checklist.md
+```
+
+Use these documents during final client review so the client understands what they can safely manage, which environment values must stay private, and which launch checks must pass before real customer traffic.
+
 ## Legal and Licensing Notes
 
 Before commercial delivery:
@@ -943,12 +972,12 @@ Before commercial delivery:
 
 ## Project Notes
 
-This app is still being hardened for production. It has passed the checkout delivery, admin category, admin order confirmation, admin filtering, customer stock visibility, product discount, and Google sign-in checkpoints, but it should not be treated as fully production-ready until the remaining business rules, deployment checklist, staging tests, and client review are complete.
+This app is still being hardened for production. It has passed the checkout delivery, admin category, admin order confirmation, admin filtering, customer stock visibility, product discount, Google sign-in, critical E2E coverage, production-safe API logging, and route error boundary checkpoints, but it should not be treated as fully production-ready until the production environment, launch checklist, staging tests, and client review are complete.
 
 Next safest checkpoints:
 
 1. Verify Google sign-in on staging/production with exact callback URLs and separate environment secrets.
-2. Admin-editable delivery pricing dashboard.
-3. Caching/performance review after the core business rules are stable.
+2. Complete the production readiness checklist and client handoff guide.
+3. Review caching/performance after launch testing or measured usage shows a real need.
 
-Before launch, complete the production deployment checklist and test the full customer and admin flows on the deployed domain.
+Before launch, complete the production deployment checklist, review the handoff docs with the client, and test the full customer and admin flows on the deployed domain.
