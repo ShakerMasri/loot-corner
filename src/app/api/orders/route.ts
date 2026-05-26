@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { validateSameOriginRequest } from "~/lib/csrf";
 import { getDeliveryAreaByKey } from "~/lib/delivery";
 import { prisma } from "~/lib/prisma";
+import { getReferenceMessage, logError } from "~/lib/logger";
 import { rateLimit } from "~/lib/rate-limit";
 import { auth } from "~/server/auth";
 import { getEffectiveProductPrice } from "~/server/pricing";
@@ -78,9 +79,15 @@ export async function GET() {
     return NextResponse.json({
       orders: orders.map(serializeOrder),
     });
-  } catch {
+  } catch (error) {
+    const errorId = logError("Failed to load customer orders.", error, {
+      action: "orders.list",
+      route: "/api/orders",
+      userId,
+    });
+
     return NextResponse.json(
-      { message: "Failed to load orders." },
+      { message: getReferenceMessage("Failed to load orders.", errorId) },
       { status: 500 },
     );
   }
@@ -342,8 +349,14 @@ export async function POST(request: Request) {
       }
     }
 
+    const errorId = logError("Failed to place customer order.", error, {
+      action: "orders.create",
+      route: "/api/orders",
+      userId,
+    });
+
     return NextResponse.json(
-      { message: "Failed to place order." },
+      { message: getReferenceMessage("Failed to place order.", errorId) },
       { status: 500 },
     );
   }

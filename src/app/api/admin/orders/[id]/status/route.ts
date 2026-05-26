@@ -2,6 +2,7 @@ import { OrderStatus } from "@prisma/client";
 import type { Prisma } from "@prisma/client";
 import { NextResponse } from "next/server";
 import { requireAdmin } from "~/lib/admin";
+import { getReferenceMessage, logError } from "~/lib/logger";
 import { validateSameOriginRequest } from "~/lib/csrf";
 import { prisma } from "~/lib/prisma";
 import { rateLimit } from "~/lib/rate-limit";
@@ -279,8 +280,20 @@ export async function PATCH(request: Request, { params }: RouteContext) {
       );
     }
 
+    const errorId = logError("Failed to update admin order status.", error, {
+      action: "admin.orders.status.update",
+      route: "/api/admin/orders/[id]/status",
+      adminUserId: admin.user.id,
+      orderId: parsedParams.data.id,
+    });
+
     return NextResponse.json(
-      { message: "Failed to update order status." },
+      {
+        message: getReferenceMessage(
+          "Failed to update order status.",
+          errorId,
+        ),
+      },
       { status: 500 },
     );
   }

@@ -1,6 +1,7 @@
 import { Prisma } from "@prisma/client";
 import { NextResponse } from "next/server";
 import { requireAdmin } from "~/lib/admin";
+import { getReferenceMessage, logError } from "~/lib/logger";
 import { prisma } from "~/lib/prisma";
 import { createCategorySchema } from "~/lib/validations";
 import { rateLimit } from "~/lib/rate-limit";
@@ -119,8 +120,14 @@ export async function POST(request: Request) {
       );
     }
 
+    const errorId = logError("Failed to create admin category.", error, {
+      action: "admin.categories.create",
+      route: "/api/admin/categories",
+      adminUserId: admin.user.id,
+    });
+
     return NextResponse.json(
-      { message: "Failed to create category." },
+      { message: getReferenceMessage("Failed to create category.", errorId) },
       { status: 500 },
     );
   }
@@ -174,9 +181,15 @@ export async function GET(request: Request) {
         totalPages,
       },
     });
-  } catch {
+  } catch (error) {
+    const errorId = logError("Failed to load admin categories.", error, {
+      action: "admin.categories.list",
+      route: "/api/admin/categories",
+      adminUserId: admin.user.id,
+    });
+
     return NextResponse.json(
-      { message: "Failed to load categories." },
+      { message: getReferenceMessage("Failed to load categories.", errorId) },
       { status: 500 },
     );
   }

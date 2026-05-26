@@ -4,6 +4,7 @@ import { Readable } from "node:stream";
 import { requireAdmin } from "~/lib/admin";
 import { cloudinary } from "~/lib/cloudinary";
 import { validateSameOriginRequest } from "~/lib/csrf";
+import { getReferenceMessage, logError } from "~/lib/logger";
 import { rateLimit } from "~/lib/rate-limit";
 
 export const runtime = "nodejs";
@@ -196,9 +197,22 @@ export async function POST(request: Request) {
         bytes: uploadedImage.bytes,
       },
     });
-  } catch {
+  } catch (error) {
+    const errorId = logError("Failed to upload admin product image.", error, {
+      action: "admin.products.image.upload",
+      route: "/api/admin/uploads/product-images",
+      adminUserId: admin.user.id,
+      fileSizeBytes: file.size,
+      fileType: file.type,
+    });
+
     return NextResponse.json(
-      { message: "Failed to upload product image." },
+      {
+        message: getReferenceMessage(
+          "Failed to upload product image.",
+          errorId,
+        ),
+      },
       { status: 500 },
     );
   }

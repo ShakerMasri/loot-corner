@@ -1,6 +1,7 @@
 import { Prisma } from "@prisma/client";
 import { NextResponse } from "next/server";
 import { requireAdmin } from "~/lib/admin";
+import { getReferenceMessage, logError } from "~/lib/logger";
 import { prisma } from "~/lib/prisma";
 import { createProductSchema } from "~/lib/validations";
 import { rateLimit } from "~/lib/rate-limit";
@@ -190,9 +191,15 @@ export async function GET(request: Request) {
         archivedProducts,
       },
     });
-  } catch {
+  } catch (error) {
+    const errorId = logError("Failed to load admin products.", error, {
+      action: "admin.products.list",
+      route: "/api/admin/products",
+      adminUserId: admin.user.id,
+    });
+
     return NextResponse.json(
-      { message: "Failed to load products." },
+      { message: getReferenceMessage("Failed to load products.", errorId) },
       { status: 500 },
     );
   }
@@ -278,8 +285,14 @@ export async function POST(request: Request) {
       );
     }
 
+    const errorId = logError("Failed to create admin product.", error, {
+      action: "admin.products.create",
+      route: "/api/admin/products",
+      adminUserId: admin.user.id,
+    });
+
     return NextResponse.json(
-      { message: "Failed to create product." },
+      { message: getReferenceMessage("Failed to create product.", errorId) },
       { status: 500 },
     );
   }
